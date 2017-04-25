@@ -68,4 +68,16 @@ public class Encoding {
 
         return frame;
     }
+
+    // Generates response handshake from server
+    public String generateServerResponse(String key) throws Exception{
+        Encoding accept = new Encoding();
+        String newKey = accept.encodeKey(key);
+
+        String handshake = "HTTP/1.1 101 Switch Protocols\r\n" +
+                            "Upgrade: websocket\r\n" +
+                            "Connection: Upgrade\r\n" +
+                            "Sec-WebSocket-Accept: " + newKey+"\r\n\r\n";
+        return handshake;
+    }
 }
