@@ -2,6 +2,7 @@ package websocket;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
@@ -27,6 +28,8 @@ public class Websocket {
         try {
             client = server.accept();
             InputStream in = client.getInputStream();
+            OutputStream out = client.getOutputStream();
+
             String data = new Scanner(in,"UTF-8").useDelimiter("\\r\\n\\r\\n").next();
             String searchFor ="Sec-WebSocket-Key: ";
             Pattern word = Pattern.compile(searchFor);
@@ -34,10 +37,20 @@ public class Websocket {
             match.find();
             String key = data.substring(match.end(),match.end()+24);
 
-            //IF NO MATCH --> client.close();
+            //TODO: IF NO MATCH --> client.close();
 
+            Encoding enc = new Encoding();
+            String serverKey = enc.encodeKey(key);
+            System.out.println(serverKey);
+
+            String response = enc.generateServerResponse(serverKey);
+
+            byte[] responseByte = response.getBytes();
+            out.write(responseByte);
 
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
