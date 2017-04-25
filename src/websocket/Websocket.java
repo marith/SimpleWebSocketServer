@@ -1,6 +1,7 @@
 package websocket;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -19,11 +20,16 @@ public class Websocket {
     * client handshake request
     * IF - not understood or has an incorrect value: "400 Bad Request", immediately close the socket
     * ELSE - send accept frame
-    *
     */
     Socket client = server.accept();
 
     //recieve message
+    InputStream message = client.getInputStream();
+
+    //read mask
+    //read lenght
+    //read data
+
     //decode and answer
 
 
