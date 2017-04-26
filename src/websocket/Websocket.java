@@ -24,12 +24,58 @@ public class Websocket {
     * IF - not understood or has an incorrect value: "400 Bad Request", immediately close the socket
     * ELSE - send accept frame
     */
-    public void handshake(){
+
+
+    public void connection(){
         try {
             client = server.accept();
             InputStream in = client.getInputStream();
             OutputStream out = client.getOutputStream();
+            handshake(in,out);
+            Encoding enc = new Encoding();
 
+            while(true){
+                byte type = (byte)in.read();
+                int size = (0x000000FF) & in.read() -128;
+                System.out.println("size1: "+size);
+                if(size>125){
+                    byte[] buffer = new byte[2];
+                    buffer[0] = (byte)in.read();
+                    buffer[1] = (byte)in.read();
+                    System.out.println("size2: "+buffer.toString());
+                    //size = new size
+                    if(size>126){
+                        buffer = new byte[8];
+                        in.read(buffer,4,8);
+                        //size = new size
+                        System.out.println("size3: "+buffer.toString());
+                    }
+                }
+
+                byte[] payload = new byte[size+4];
+                in.read(payload);
+                byte[] message = enc.maskData(payload);
+                System.out.println("Message: "+message.toString());
+                break;
+
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        finally {
+            try {
+                client.close();
+                server.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    private boolean handshake(InputStream in, OutputStream out){
+        try {
             String data = new Scanner(in,"UTF-8").useDelimiter("\\r\\n\\r\\n").next();
             String searchFor ="Sec-WebSocket-Key: ";
             Pattern word = Pattern.compile(searchFor);
@@ -37,21 +83,19 @@ public class Websocket {
             match.find();
             String key = data.substring(match.end(),match.end()+24);
 
-            //TODO: IF NO MATCH --> client.close();
+            //TODO: IF NO MATCH --> return false
 
             Encoding enc = new Encoding();
-            String serverKey = enc.encodeKey(key);
-            System.out.println(serverKey);
-
-            String response = enc.generateServerResponse(serverKey);
-
+            String response = enc.generateServerResponse(key);
             byte[] responseByte = response.getBytes();
             out.write(responseByte);
-
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
+            return false;
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
     }
 
@@ -85,8 +129,13 @@ public class Websocket {
     public static void main(String[] args) throws IOException {
         ServerSocket ss = new ServerSocket(3001);
         Websocket ws = new Websocket(ss);
-        ws.handshake();
+        ws.connection();
 
+        /*byte size = (byte)0b11001000;
+        System.out.println("byte: "+size);
+        long unsigned = (0x000000FF) & size;
+        System.out.println("unsigned: "+unsigned);
+        */
 
         //byte[] encoded = new byte[] {(byte)198, (byte)131, (byte)130, (byte)182, (byte)194, (byte)135};
     }
