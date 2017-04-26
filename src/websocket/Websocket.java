@@ -31,44 +31,24 @@ public class Websocket {
             client = server.accept();
             InputStream in = client.getInputStream();
             OutputStream out = client.getOutputStream();
-            handshake(in,out);
+            if(!handshake(in,out)){
+                throw new Exception("Error connecting to client");
+            }
             Encoding enc = new Encoding();
 
             while(true){
                 byte type = (byte)in.read();
-                int size = (0x000000FF) & in.read() -128;
-                System.out.println("size1: "+size);
-                if(size>125){
-                    byte[] buffer = new byte[2];
-                    buffer[0] = (byte)in.read();
-                    buffer[1] = (byte)in.read();
-                    System.out.println("size2: "+buffer.toString());
-                    //size = new size
-                    if(size>126){
-                        buffer = new byte[8];
-                        in.read(buffer,4,8);
-                        //size = new size
-                        System.out.println("size3: "+buffer.toString());
-                    }
-                }
+                byte[] message = recieveMessage(in, enc);
+                sendMessage(out,message, enc);
 
-                byte[] payload = new byte[size+4];
-                in.read(payload);
-                byte[] message = enc.maskData(payload);
-                String s = new String(message);
-                System.out.println("Message: "+s);
-
-                byte[] msgBack = enc.generateFrame(s);
-                out.write(msgBack);
-                
-                System.out.println("end");
                 break;
             }
 
         } catch (IOException e) {
             e.printStackTrace();
-        }
-        finally {
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
             try {
                 client.close();
                 server.close();
@@ -79,16 +59,56 @@ public class Websocket {
 
     }
 
+    private byte[] recieveMessage(InputStream in, Encoding enc) throws IOException {
+        int size = (0x000000FF) & in.read() -128;
+        System.out.println("size 1: "+size);
+        if(size>125){
+            byte ch1 = (byte)in.read();
+            byte ch2 = (byte)in.read();
+            byte[] byteArr = {ch1,ch2};
+
+            int sizeL = ((ch1 << 8) + (ch2 << 0)) & 0xFF;
+
+            System.out.println("size 2: "+sizeL);
+
+            if(size>126){
+                byte[] buffer = new byte[8];
+                in.read(buffer,4,8);
+                //size = new size
+                System.out.println("size 3: "+new String(buffer));
+            }
+        }
+
+        byte[] payload = new byte[size+4];
+        in.read(payload);
+        byte[] message = enc.maskData(payload);
+        return message;
+    }
+
+
+
+    private void sendMessage(OutputStream out, byte[] message, Encoding enc) throws IOException {
+        byte[] msgBack = enc.generateFrame(message);
+        out.write(msgBack);
+    }
+
+    public void close(){
+
+    }
+
+
     private boolean handshake(InputStream in, OutputStream out){
         try {
             String data = new Scanner(in,"UTF-8").useDelimiter("\\r\\n\\r\\n").next();
             String searchFor ="Sec-WebSocket-Key: ";
             Pattern word = Pattern.compile(searchFor);
             Matcher match = word.matcher(data);
-            match.find();
-            String key = data.substring(match.end(),match.end()+24);
+            boolean isMatch = match.find();
 
-            //TODO: IF NO MATCH --> return false
+            if(!isMatch){
+                return false;
+            }
+            String key = data.substring(match.end(),match.end()+24);
 
             Encoding enc = new Encoding();
             String response = enc.generateServerResponse(key);
@@ -104,31 +124,9 @@ public class Websocket {
         }
     }
 
-
-    //examples
-    /*GET /chat HTTP/1.1
-    Host: example.com:8000
-    Upgrade: websocket
-    Connection: Upgrade
-    Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
-    Sec-WebSocket-Version: 13
-    */
-
-
-
-    //recieve message
-    //read mask
-    //read lenght
-    //read data
-
-    //decode and answer
-
-
     //CLOSE handshake
     //sends closing frame --> get closing frame back --> close connection
     //recieve closing frame --> send closing frame back
-
-
 
     //TEST
     public static void main(String[] args) throws IOException {
