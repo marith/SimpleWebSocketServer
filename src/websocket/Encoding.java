@@ -50,17 +50,46 @@ public class Encoding {
     public byte[] generateTextFrame(String text){ // Payload generated from string
 
         byte[] textBytes = text.getBytes(); // The payload
+        byte opcode = (byte)0b10000001;
+        byte[] mask = {0x0,0x0,0x0,0x0};
+        byte[] length = null;
 
-        byte first = (byte)0b10000001;
+        byte[] frame = null;
 
-        byte[] frame = new byte[1+textBytes.length]; // Size of frame is determined by 8 bits of information + the payload
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
 
         try {
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
-            output.write(first);
-            output.write(textBytes);
 
-            frame = output.toByteArray();
+            if(textBytes.length < 126) {
+                length = new byte[1];
+                length[0] = (byte) textBytes.length;
+
+            } else if (textBytes.length >= 126 && textBytes.length < Math.pow(2,16)) {
+                length = new byte[2];
+                length[0] = (byte) 126;
+
+                for(int i = 1; i <= 16; i+=8) {
+                    length[i] = (byte) ((textBytes.length >>> i) & 0xFF);
+                }
+
+            } else if (textBytes.length >= Math.pow(2,16) && textBytes.length < Math.pow(2, 64)-1){
+                length = new byte[8];
+                length[0] = (byte) 127;
+
+                for(int i = 1; i <= 64; i+=8){
+                    length[i] = (byte) ((textBytes.length >>> i) & 0xFF);
+                }
+
+        } else {
+            System.err.print("Do some error handling here");
+        }
+
+        output.write(opcode);
+        output.write(length);
+        output.write(mask);
+        output.write(textBytes);
+
+        frame = output.toByteArray();
 
         } catch (IOException e) {
             System.err.println("Error: IOException");
@@ -71,13 +100,43 @@ public class Encoding {
 
     public byte[] generateFrame(byte[] input){ // Payload from byte array, msg is text
 
-        byte first = (byte)0b10000001;
+        byte opcode = (byte)0b10000001;
+        byte[] mask = {0x0,0x0,0x0,0x0};
+        byte[] length = null;
 
-        byte[] frame = new byte[1+input.length]; // Size of frame is determined by 8 bits of information + the payload
+        byte[] frame = null;
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
 
         try {
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
-            output.write(first);
+
+            if(input.length < 126) {
+                length = new byte[1];
+                length[0] = (byte) input.length;
+
+            } else if (input.length >= 126 && input.length < Math.pow(2,16)) {
+                length = new byte[2];
+                length[0] = (byte) 126;
+
+                for(int i = 1; i <= 16; i+=8) {
+                    length[i] = (byte) ((input.length >>> i) & 0xFF);
+                }
+
+            } else if (input.length >= Math.pow(2,16) && input.length < Math.pow(2, 64)-1){
+                length = new byte[8];
+                length[0] = (byte) 127;
+
+                for(int i = 1; i <= 64; i+=8){
+                    length[i] = (byte) ((input.length >>> i) & 0xFF);
+                }
+
+            } else {
+                System.err.print("Do some error handling here");
+            }
+
+            output.write(opcode);
+            output.write(length);
+            output.write(mask);
             output.write(input);
 
             frame = output.toByteArray();
@@ -135,5 +194,14 @@ public class Encoding {
                             "Connection: Upgrade\r\n" +
                             "Sec-WebSocket-Accept: " + newKey+"\r\n\r\n";
         return handshake;
+    }
+
+    public static void main(String[] args) {
+        Encoding enc = new Encoding();
+
+        byte[] res = enc.generateTextFrame("Hellolawdlskflawdscdkldms");
+        for(int i = 0; i < res.length; i++) {
+            System.out.println((res[i])+"\n");
+        }
     }
 }
