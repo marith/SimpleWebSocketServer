@@ -38,16 +38,16 @@ public class Encoding {
             maskingKey[i] = payload[i];
         }
 
-        byte[] result = new byte[payload.length];
+        byte[] result = new byte[payload.length-4];
 
-        for(int i = 0; i < payload.length; i++){
+        for(int i = 4; i < payload.length; i++){
            result[i] = (byte) (payload[i] ^ maskingKey[i%4]);
         }
 
         return result;
     }
 
-    public byte[] generateFrame(String text){
+    public byte[] generateFrame(String text){ // Generates a frame (text content) with given input text
 
         byte[] textBytes = text.getBytes(); // The payload
 
@@ -67,6 +67,28 @@ public class Encoding {
         }
 
         return frame;
+    }
+
+    // Generates a server initiated closing frame
+    public byte[] closingRequest(){
+        byte opcode = (byte) 0b10001000;
+        byte payload = (byte) 0b00000000;
+
+        byte[] frame;
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        output.write(opcode);
+        output.write(payload);
+
+        frame = output.toByteArray();
+
+        return frame;
+    }
+
+    // Generates a closing frame in response to client closing
+    public byte[] closingResponse(){
+        return null;
+
     }
 
     // Generates response handshake from server
