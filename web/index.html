@@ -1,0 +1,89 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <script src="https://code.jquery.com/jquery-3.2.0.min.js" type="text/javascript"></script>
+    <style>
+        #display {
+            background-color:#E1D0EF;
+            border-style:ridge;
+            width:450px;
+            max-width:450px;
+            height:350px;
+            max-height: 350px;
+            display:inline-block;
+            overflow-y: scroll;
+            overflow-y: scroll;
+        }
+
+        #inputDiv {
+            width:450px;
+            max-width:450px;
+            height:100px;
+
+        }
+
+    </style>
+
+    <script type="text/javascript">
+
+
+        var display;
+        var text;
+        //When this file is fully loaded, initialize board with context
+        $(document).ready(function(){
+            ws = new WebSocket("ws://localhost:3001");
+
+            ws.onopen = function() {
+                $("#connection_label").html("Chat online");
+            };
+
+
+            ws.onerror = function(error) {
+                $("#connection_label").html("Not connected");
+            };
+
+
+            ws.onmessage = function(event) {
+                alert("event!"+event.data);
+                $("#display").append(event.data);
+            };
+
+
+            $("#send").click(function(){
+
+                var context = $("#message").val();
+                var name = $("#namefield").val();
+                var date = new Date();
+                var min = date.getMinutes();
+                var hour = date.getHours();
+                var sec = date.getSeconds();
+
+                text = "<span>"+ '<b>'+name +"</b>"+ ', '+"<i>"+ hour +':'+ min +':' + sec +' : </i>' + context + "</span><br>";
+                ws.send(text);
+            });
+
+
+            ws.onclose = function(message) {
+                $("#connection_label").html("Not connected");
+            };
+        });
+
+    </script>
+</head>
+<body>
+<div id="connection_label">
+    Connecting...
+</div>
+<div>
+    <div id="display">
+    </div>
+    <div id="inputfield">
+        <div id="inputDiv">
+            <input type="text" id="namefield" placeholder="Your name"><br>
+            <textarea id="message" rows="4" cols="60" placeholder="Write something"></textarea>
+            <button id="send" type="submit">Send</button><br>
+        </div>
+    </div>
+</div>
+</body>
+</html>
