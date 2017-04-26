@@ -101,9 +101,8 @@ public class Encoding {
     public byte[] generateFrame(byte[] input){ // Payload from byte array, msg is text
 
         byte opcode = (byte)0b10000001;
-        byte[] mask = {0x0,0x0,0x0,0x0};
+        //byte[] mask = {0x0,0x0,0x0,0x0};
         byte[] length = null;
-
         byte[] frame = null;
 
         ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -116,35 +115,38 @@ public class Encoding {
 
             } else if (input.length >= 126 && input.length < Math.pow(2,16)) {
                 length = new byte[3];
-                length[0] = (byte) 126;
+                length[0] = (byte) 0b01111110 ; //126
 
                 for(int i = 0; i < 2; i++) {
-                    length[i+1] = (byte) ((input.length >>> i*8) & 0xFF);
+                    length[2-i] = (byte) ((input.length >>> i*8) & 0xFF);
                 }
 
             } else if (input.length >= Math.pow(2,16) && input.length < Math.pow(2, 64)){
                 length = new byte[9];
-                length[0] = (byte) 127;
+                length[0] = (byte) 0b01111111; //127
 
                 for(int i = 0; i < 8; i++){
-                    length[i+1] = (byte) ((input.length >>> i*8) & 0xFF);
+                    length[8-i] = (byte) ((input.length >>> i*8) & 0xFF);
                 }
 
             } else {
                 System.err.print("Do some error handling here");
             }
             System.out.println("opcode bin: "+Integer.toBinaryString(opcode));
-            output.write(opcode);
-            System.out.println("opcode: "+opcode);
-            output.write(length);
-            output.write(mask);
-            output.write(input);
+            System.out.println("opcode: "+opcode+"\n");
 
+            output.write(opcode);
+            output.write(length);
+            //output.write(mask);
+            output.write(input);
             frame = output.toByteArray();
-            System.out.println("første byte i frame: "+Integer.toBinaryString(frame[0]));
-            System.out.println("andre byte i frame: "+Integer.toBinaryString(frame[1]));
-            System.out.println("tredje byte i frame: "+Integer.toBinaryString(frame[2]));
-            System.out.println("fjerde byte i frame: "+Integer.toBinaryString(frame[3]));
+
+
+
+            System.out.println("\nFRAME OPCODE: "+Integer.toBinaryString(frame[0]));
+            System.out.println("\nFRAME lengde: "+Integer.toBinaryString(frame[1]));
+            System.out.println("3 byte i frame: "+Integer.toBinaryString(frame[2]));
+            System.out.println("4 byte i frame: "+Integer.toBinaryString(frame[3]));
             System.out.println("5 byte i frame: "+Integer.toBinaryString(frame[4]));
             System.out.println("6 byte i frame: "+Integer.toBinaryString(frame[5]));
             System.out.println("7 byte i frame: "+Integer.toBinaryString(frame[6]));
@@ -152,10 +154,10 @@ public class Encoding {
             System.out.println("9 byte i frame: "+Integer.toBinaryString(frame[8]));
             System.out.println("10 byte i frame: "+Integer.toBinaryString(frame[9]));
 
-
-
-
-
+            System.out.println("\n7 byte i frame: "+(char)frame[6]);
+            System.out.println("8 byte i frame: "+(char)frame[7]);
+            System.out.println("9 byte i frame: "+(char)(frame[8]));
+            System.out.println("10 byte i frame: "+(char)(frame[9]));
 
         } catch (IOException e) {
             System.err.println("Error: IOException");

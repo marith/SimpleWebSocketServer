@@ -32,6 +32,8 @@
         //When this file is fully loaded, initialize board with context
         $(document).ready(function(){
             ws = new WebSocket("ws://localhost:3001");
+            //ws = new WebSocket("ws://echo.websocket.org/");
+
 
             ws.onopen = function() {
                 $("#connection_label").html("Chat online");
@@ -59,6 +61,7 @@
                 var sec = date.getSeconds();
 
                 text = "<span>"+ '<b>'+name +"</b>"+ ', '+"<i>"+ hour +':'+ min +':' + sec +' : </i>' + context + "</span><br>";
+                //text = context;
                 ws.send(text);
             });
 

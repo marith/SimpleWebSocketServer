@@ -61,22 +61,20 @@ public class Websocket {
 
     private byte[] recieveMessage(InputStream in, Encoding enc) throws IOException {
         int size = (0x000000FF) & in.read() -128;
-        System.out.println("size 1: "+size);
-        if(size>125){
-            byte ch1 = (byte)in.read();
-            byte ch2 = (byte)in.read();
-            byte[] byteArr = {ch1,ch2};
 
-            int sizeL = ((ch1 << 8) + (ch2 << 0)) & 0xFF;
+        if(size==126) {
+            System.out.println("Størrelsen er 126!\n");
+            byte ch1 = (byte) in.read();
+            byte ch2 = (byte) in.read();
+            byte[] byteArr = {ch1, ch2};
 
-            System.out.println("size 2: "+sizeL);
-
-            if(size>126){
-                byte[] buffer = new byte[8];
-                in.read(buffer,4,8);
-                //size = new size
-                System.out.println("size 3: "+new String(buffer));
-            }
+            size = ((ch1 << 8) + (ch2 << 0)) & 0xFF;
+        }
+        else if(size==127){
+            byte[] buffer = new byte[8];
+            in.read(buffer,4,8);
+            //size = new size
+            System.out.println("size 3: "+new String(buffer));
         }
 
         byte[] payload = new byte[size+4];
@@ -90,8 +88,10 @@ public class Websocket {
 
     private void sendMessage(OutputStream out, byte[] message, Encoding enc) throws IOException {
         byte[] msgBack = enc.generateFrame(message);
-        System.out.println(new String(msgBack));
-        out.write(msgBack);
+        out.write(msgBack, 0,msgBack.length);
+        out.flush();
+        System.out.println("\n"+new String(msgBack));
+        System.out.println("sendt!");
     }
 
     public void close(){
