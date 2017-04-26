@@ -40,8 +40,8 @@ public class Encoding {
 
         byte[] result = new byte[payload.length-4];
 
-        for(int i = 4; i < payload.length; i++){
-           result[i] = (byte) (payload[i] ^ maskingKey[i%4]);
+        for(int i = 0; i < result.length; i++){
+           result[i] = (byte) (payload[i+4] ^ maskingKey[i%4]);
         }
 
         return result;

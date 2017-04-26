@@ -55,9 +55,14 @@ public class Websocket {
                 byte[] payload = new byte[size+4];
                 in.read(payload);
                 byte[] message = enc.maskData(payload);
-                System.out.println("Message: "+message.toString());
-                break;
+                String s = new String(message);
+                System.out.println("Message: "+s);
 
+                byte[] msgBack = enc.generateFrame(s);
+                out.write(msgBack);
+                
+                System.out.println("end");
+                break;
             }
 
         } catch (IOException e) {
@@ -131,13 +136,6 @@ public class Websocket {
         Websocket ws = new Websocket(ss);
         ws.connection();
 
-        /*byte size = (byte)0b11001000;
-        System.out.println("byte: "+size);
-        long unsigned = (0x000000FF) & size;
-        System.out.println("unsigned: "+unsigned);
-        */
-
-        //byte[] encoded = new byte[] {(byte)198, (byte)131, (byte)130, (byte)182, (byte)194, (byte)135};
     }
 }
 
