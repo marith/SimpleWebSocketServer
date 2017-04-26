@@ -47,7 +47,7 @@ public class Encoding {
         return result;
     }
 
-    public byte[] generateFrame(String text){ // Generates a frame (text content) with given input text
+    public byte[] generateTextFrame(String text){ // Payload generated from string
 
         byte[] textBytes = text.getBytes(); // The payload
 
@@ -69,26 +69,60 @@ public class Encoding {
         return frame;
     }
 
+    public byte[] generateFrame(byte[] input){ // Payload from byte array, msg is text
+
+        byte first = (byte)0b10000001;
+
+        byte[] frame = new byte[1+input.length]; // Size of frame is determined by 8 bits of information + the payload
+
+        try {
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            output.write(first);
+            output.write(input);
+
+            frame = output.toByteArray();
+
+        } catch (IOException e) {
+            System.err.println("Error: IOException");
+        }
+
+        return frame;
+    }
+
     // Generates a server initiated closing frame
-    public byte[] closingRequest(){
-        byte opcode = (byte) 0b10001000;
-        byte payload = (byte) 0b00000000;
+    public byte[] generateStatusFrame(String status){
+        byte opcode = (byte) 0;
+        byte payloadSize = (byte) 0;
+
+        switch(status) {
+            case "CLOSE":
+                opcode = (byte) 0b10001000; // 0x8
+                payloadSize = (byte) 0b00000000;
+                break;
+
+            case "PING":
+                opcode = (byte) 0b10001001; // 0x9
+                payloadSize = (byte) 0b00000000;
+                break;
+
+            case "PONG":
+                opcode = (byte) 0b10001010; // 0xA
+                payloadSize = (byte) 0b00000000;
+                break;
+
+            default:
+                break;
+        }
 
         byte[] frame;
 
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         output.write(opcode);
-        output.write(payload);
+        output.write(payloadSize);
 
         frame = output.toByteArray();
 
         return frame;
-    }
-
-    // Generates a closing frame in response to client closing
-    public byte[] closingResponse(){
-        return null;
-
     }
 
     // Generates response handshake from server
