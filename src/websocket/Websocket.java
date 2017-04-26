@@ -39,8 +39,8 @@ public class Websocket {
             while(true){
                 byte type = (byte)in.read();
                 byte[] message = recieveMessage(in, enc);
+                System.out.println(new String(message));
                 sendMessage(out,message, enc);
-
                 break;
             }
 
@@ -81,6 +81,7 @@ public class Websocket {
 
         byte[] payload = new byte[size+4];
         in.read(payload);
+
         byte[] message = enc.maskData(payload);
         return message;
     }
@@ -89,6 +90,7 @@ public class Websocket {
 
     private void sendMessage(OutputStream out, byte[] message, Encoding enc) throws IOException {
         byte[] msgBack = enc.generateFrame(message);
+        System.out.println(new String(msgBack));
         out.write(msgBack);
     }
 
