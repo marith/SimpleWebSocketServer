@@ -47,7 +47,7 @@ public class Encoding {
         return result;
     }
 
-    public byte[] generateFrame(String text){ // Generates a frame (text content) with given input text
+    public byte[] generateTextFrame(String text){ // Payload generated from string
 
         byte[] textBytes = text.getBytes(); // The payload
 
@@ -59,6 +59,26 @@ public class Encoding {
             ByteArrayOutputStream output = new ByteArrayOutputStream();
             output.write(first);
             output.write(textBytes);
+
+            frame = output.toByteArray();
+
+        } catch (IOException e) {
+            System.err.println("Error: IOException");
+        }
+
+        return frame;
+    }
+
+    public byte[] generateFrame(byte[] input){ // Payload from byte array, msg is text
+
+        byte first = (byte)0b10000001;
+
+        byte[] frame = new byte[1+input.length]; // Size of frame is determined by 8 bits of information + the payload
+
+        try {
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            output.write(first);
+            output.write(input);
 
             frame = output.toByteArray();
 
