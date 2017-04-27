@@ -14,20 +14,38 @@ import java.util.regex.Pattern;
  * Created by Marit on 25.04.2017.
  */
 public class Websocket {
+
+    public Websocket() throws IOException {
+    }
+
+    public void connect(int port) throws IOException{
+
+        ServerSocket server = new ServerSocket(port);
+
+        while(true){
+            Socket connection = server.accept();
+            Thread client = new ClientConnection(connection);
+            client.start();
+        }
+    }
+
+    // For testing
+    public static void main(String[] args) throws IOException {
+        Websocket ws = new Websocket();
+        ws.connect(3001);
+    }
+}
+
+class ClientConnection extends Thread {
     ServerSocket server;
     Socket client;
 
-    public Websocket(ServerSocket server) throws IOException {
-        this.server = server;
+    public ClientConnection(Socket client){
+        this.client = client;
+
     }
-    /*CONNECT handshake
-    * client handshake request
-    * IF - not understood or has an incorrect value: "400 Bad Request", immediately close the socket
-    * ELSE - send accept frame
-    */
 
-
-    public void connection(){
+    public void run(){
         try {
             client = server.accept();
             InputStream in = client.getInputStream();
@@ -89,51 +107,12 @@ public class Websocket {
         } finally {
             try {
                 client.close();
-                server.close();
+  //              server.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-
     }
-
-    private byte[] recieveMessage(InputStream in, Encoding enc) throws IOException {
-        int size = (0x000000FF) & in.read() -128;
-
-        if(size==126) {
-            System.out.println("Størrelsen er 126!\n");
-            byte ch1 = (byte) in.read();
-            byte ch2 = (byte) in.read();
-            byte[] byteArr = {ch1, ch2};
-
-            size = ((ch1 << 8) + (ch2 << 0)) & 0xFF;
-        }
-        else if(size==127){
-            byte[] buffer = new byte[8];
-            in.read(buffer,4,8);
-            //size = new size
-            System.out.println("size 3: "+new String(buffer));
-        }
-
-        byte[] payload = new byte[size+4];
-        in.read(payload);
-
-        byte[] message = enc.maskData(payload);
-        return message;
-    }
-
-
-
-    private void sendMessage(OutputStream out, byte[] message) throws IOException {
-        out.write(message, 0,message.length);
-        out.flush();
-    }
-
-    //Server close
-    public void close(){
-
-    }
-
 
     private boolean handshake(InputStream in, OutputStream out){
         try {
@@ -162,17 +141,41 @@ public class Websocket {
         }
     }
 
-    //CLOSE handshake
-    //sends closing frame --> get closing frame back --> close connection
-    //recieve closing frame --> send closing frame back
+    private byte[] recieveMessage(InputStream in, Encoding enc) throws IOException {
+        int size = (0x000000FF) & in.read() -128;
 
-    //TEST
-    public static void main(String[] args) throws IOException {
-        ServerSocket ss = new ServerSocket(3001);
-        Websocket ws = new Websocket(ss);
-        ws.connection();
+        if(size==126) {
+            System.out.println("Størrelsen er 126!\n");
+            byte ch1 = (byte) in.read();
+            byte ch2 = (byte) in.read();
+            byte[] byteArr = {ch1, ch2};
+
+            size = ((ch1 << 8) + (ch2 << 0)) & 0xFF;
+        }
+        else if(size==127){
+            byte[] buffer = new byte[8];
+            in.read(buffer,4,8);
+            //size = new size
+            System.out.println("size 3: "+new String(buffer));
+        }
+
+        byte[] payload = new byte[size+4];
+        in.read(payload);
+
+        byte[] message = enc.maskData(payload);
+        return message;
+    }
+
+    private void sendMessage(OutputStream out, byte[] message) throws IOException {
+        out.write(message, 0,message.length);
+        out.flush();
+    }
+
+    //Server close
+    public void close(){
 
     }
 }
+
 
 
