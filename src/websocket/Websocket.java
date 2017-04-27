@@ -7,6 +7,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.util.Arrays;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,15 +20,14 @@ import java.util.regex.Pattern;
 public class Websocket {
     private static ArrayList<Thread> threads = new ArrayList<>();
     private static List<Thread> syncList = Collections.synchronizedList(threads);
+    ServerSocket server;
+    boolean isRunning=true;
 
-    public Websocket() throws IOException {
-    }
 
     public void connect(int port) throws IOException{
+        server = new ServerSocket(port);
 
-        ServerSocket server = new ServerSocket(port);
-
-        while(true){
+        while(isRunning) {
             Socket connection = server.accept();
             Thread client = new ClientConnection(connection);
             syncList.add(client); // Adds the running threads (clients) to a list
@@ -41,6 +44,19 @@ public class Websocket {
         }
     }
 
+    //TODO:
+    // Read from message-buffer
+    public String bufferReader(){
+
+
+        return "";
+    }
+
+    public void close() throws IOException {
+        isRunning=false;
+        server.close();
+    }
+
     // For testing
     public static void main(String[] args) throws IOException {
         Websocket ws = new Websocket();
@@ -49,67 +65,77 @@ public class Websocket {
 }
 
 class ClientConnection extends Thread {
-    Socket client;
+    private Socket client;
+    private InputStream in;
+    private OutputStream out;
 
-    public ClientConnection(Socket client){
+    public ClientConnection(Socket client) throws SocketException {
         this.client = client;
-
+        client.setSoTimeout(4000);
     }
 
     public void run(){
         try {
-            InputStream in = client.getInputStream();
-            OutputStream out = client.getOutputStream();
+            in = client.getInputStream();
+            out = client.getOutputStream();
             if(!handshake(in,out)){
                 throw new Exception("Error connecting to client");
             }
             Encoding enc = new Encoding();
 
             while(true){
-                byte type = (byte)in.read();
-                int opcode = type & 0x0F;
-                byte[] msgBack = null;
-                if(opcode==0x1){ //text
-                    byte[] message = recieveMessage(in, enc);
-                    System.out.println(new String(message));
-                    msgBack = enc.generateFrame(message);
+                try{
+                    byte type = (byte)in.read();
+                    int opcode = type & 0x0F;
+                    byte[] msgBack = null;
+
+                    //TEXT-FRAME
+                    if(opcode==0x1){
+                        byte[] message = recieveMessage(enc);
+                        System.out.println(new String(message));
+                        msgBack = enc.generateFrame(message);
+                        sendMessage(out,msgBack);
+                    }
+                    //PING-FRAME
+                    else if(opcode==0x9){//ping
+                        byte length = (byte)in.read();
+                        System.out.println("Ping! length: "+Integer.toBinaryString(length));
+                        msgBack = enc.generateStatusFrame("PONG");
+                        sendMessage(out,msgBack);
+                    }
+                    //CLOSE-FRAME
+                    else if(opcode==0x8){//close
+                        byte length = (byte)in.read();
+                        System.out.println("Close! length: "+Integer.toBinaryString(length));
+                        msgBack = enc.generateStatusFrame("CLOSE");
+                        sendMessage(out,msgBack);
+
+                    }
+                    else{
+                        System.out.println("Unhandled opcode: "+Integer.toBinaryString(opcode));
+                        break;
+                    }
+                //PING IF SOCKET-TIMEOUT
+                }catch(SocketTimeoutException ste){
+                    byte[] msgBack = enc.generateStatusFrame("PING");
                     sendMessage(out,msgBack);
+                    System.out.println("PING!");
 
-                }else if(opcode==0x9){//ping
-                    byte length = (byte)in.read();
-                    System.out.println("Ping! length: "+Integer.toBinaryString(length));
-                    msgBack = enc.generateStatusFrame("PONG");
-                    sendMessage(out,msgBack);
-
-                }else if(opcode==0xA){//pong
-                    byte length = (byte)in.read();
-                    System.out.println("Pong! length: "+Integer.toBinaryString(length));
-
-                }else if(opcode==0x8){//close
-                    byte length = (byte)in.read();
-                    System.out.println("Close! length: "+Integer.toBinaryString(length));
-                    msgBack = enc.generateStatusFrame("CLOSE");
-                    sendMessage(out,msgBack);
-
-                }else{
-                    System.out.println("Unhandled opcode: "+Integer.toBinaryString(opcode));
-                    break;
+                    byte type = (byte)in.read();
+                    int opcode = type & 0x0F;
+                    if(opcode==0xA){
+                        byte length = (byte)in.read();
+                        byte[] mask = new byte[4];
+                        in.read(mask,0,4);
+                        System.out.println("PONG!\n");
+                    }
+                    else{
+                        //TODO: feilhåndtering
+                        System.out.println("ikke pong.. :(");
+                        break;
+                    }
                 }
-                msgBack = null;
-                msgBack = enc.generateStatusFrame("PING");
-                sendMessage(out,msgBack);
-                System.out.println("ping sendt: "+ Arrays.toString(msgBack));
-
-                type = (byte)in.read();
-                opcode = type & 0x0F;
-                byte length = (byte)in.read();
-                byte[] mask = new byte[4];
-                in.read(mask,0,4);
-                System.out.println("Pong! "+Integer.toBinaryString(opcode)+", length: "+Integer.toBinaryString(length));
-                System.out.println("Mask: "+ Arrays.toString(mask));
-
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         } catch (Exception e) {
@@ -117,7 +143,6 @@ class ClientConnection extends Thread {
         } finally {
             try {
                 client.close();
-  //              server.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -151,7 +176,7 @@ class ClientConnection extends Thread {
         }
     }
 
-    private byte[] recieveMessage(InputStream in, Encoding enc) throws IOException {
+    private byte[] recieveMessage(Encoding enc) throws IOException {
         int size = (0x000000FF) & in.read() -128;
 
         if(size==126) {
