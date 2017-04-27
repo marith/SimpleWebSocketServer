@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.Charset;
+import java.util.*;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.Arrays;
@@ -16,6 +18,8 @@ import java.util.regex.Pattern;
  * Created by Marit on 25.04.2017.
  */
 public class Websocket {
+    private static ArrayList<Thread> threads = new ArrayList<>();
+    private static List<Thread> syncList = Collections.synchronizedList(threads);
     ServerSocket server;
     boolean isRunning=true;
 
@@ -26,7 +30,17 @@ public class Websocket {
         while(isRunning) {
             Socket connection = server.accept();
             Thread client = new ClientConnection(connection);
+            syncList.add(client); // Adds the running threads (clients) to a list
             client.start();
+        }
+    }
+
+    public void sendMessage(String message) throws IOException {
+        byte[] byteMsg = message.getBytes(Charset.forName("UTF-8"));
+
+        for(int i = 0; i < syncList.size(); i++){
+            ClientConnection con = (ClientConnection) syncList.get(i);
+            con.sendMessage(byteMsg);
         }
     }
 
@@ -187,7 +201,7 @@ class ClientConnection extends Thread {
         return message;
     }
 
-    private void sendMessage(OutputStream out, byte[] message) throws IOException {
+    protected void sendMessage(byte[] message) throws IOException {
         out.write(message, 0,message.length);
         out.flush();
     }
