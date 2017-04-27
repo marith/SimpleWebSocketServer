@@ -37,7 +37,6 @@ public class Websocket {
 }
 
 class ClientConnection extends Thread {
-    ServerSocket server;
     Socket client;
 
     public ClientConnection(Socket client){
@@ -47,7 +46,6 @@ class ClientConnection extends Thread {
 
     public void run(){
         try {
-            client = server.accept();
             InputStream in = client.getInputStream();
             OutputStream out = client.getOutputStream();
             if(!handshake(in,out)){
