@@ -38,9 +38,19 @@ public class Websocket {
 
             while(true){
                 byte type = (byte)in.read();
-                byte[] message = recieveMessage(in, enc);
-                System.out.println(new String(message));
-                sendMessage(out,message, enc);
+                int opcode = type & 0x0F;
+
+                if(opcode==0x1){ //text
+                    byte[] message = recieveMessage(in, enc);
+                    System.out.println(new String(message));
+                    sendMessage(out,message, enc);
+                }else if(opcode==0x9){//ping
+
+                }else if(opcode==0xA){//pong
+
+                }else if(opcode==0x8){//close
+
+                }
                 break;
             }
 
@@ -94,6 +104,7 @@ public class Websocket {
         System.out.println("sendt!");
     }
 
+    //Server close
     public void close(){
 
     }
