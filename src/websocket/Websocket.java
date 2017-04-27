@@ -97,21 +97,21 @@ class ClientConnection extends Thread {
                         byte[] message = recieveMessage(enc);
                         System.out.println(new String(message));
                         msgBack = enc.generateFrame(message);
-                        sendMessage(out,msgBack);
+                        sendMessage(msgBack);
                     }
                     //PING-FRAME
                     else if(opcode==0x9){//ping
                         byte length = (byte)in.read();
                         System.out.println("Ping! length: "+Integer.toBinaryString(length));
                         msgBack = enc.generateStatusFrame("PONG");
-                        sendMessage(out,msgBack);
+                        sendMessage(msgBack);
                     }
                     //CLOSE-FRAME
                     else if(opcode==0x8){//close
                         byte length = (byte)in.read();
                         System.out.println("Close! length: "+Integer.toBinaryString(length));
                         msgBack = enc.generateStatusFrame("CLOSE");
-                        sendMessage(out,msgBack);
+                        sendMessage(msgBack);
 
                     }
                     else{
@@ -121,7 +121,7 @@ class ClientConnection extends Thread {
                 //PING IF SOCKET-TIMEOUT
                 }catch(SocketTimeoutException ste){
                     byte[] msgBack = enc.generateStatusFrame("PING");
-                    sendMessage(out,msgBack);
+                    sendMessage(msgBack);
                     System.out.println("PING!");
 
                     byte type = (byte)in.read();
@@ -214,5 +214,3 @@ class ClientConnection extends Thread {
 
     }
 }
-
-
