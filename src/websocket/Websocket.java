@@ -23,7 +23,6 @@ public class Websocket {
     ServerSocket server;
     boolean isRunning=true;
 
-
     public void connect(int port) throws IOException{
         server = new ServerSocket(port);
 
@@ -68,10 +67,14 @@ class ClientConnection extends Thread {
     private Socket client;
     private InputStream in;
     private OutputStream out;
+    private ClientListener listener;
 
     public ClientConnection(Socket client) throws SocketException {
         this.client = client;
         client.setSoTimeout(4000);
+    }
+    public void setClientListener(ClientListener listener) {
+        this.listener = listener;
     }
 
     public void run(){
@@ -211,6 +214,5 @@ class ClientConnection extends Thread {
 
     }
 }
-
 
 
