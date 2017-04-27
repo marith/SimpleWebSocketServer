@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -39,27 +40,46 @@ public class Websocket {
             while(true){
                 byte type = (byte)in.read();
                 int opcode = type & 0x0F;
-
+                byte[] msgBack = null;
                 if(opcode==0x1){ //text
                     byte[] message = recieveMessage(in, enc);
                     System.out.println(new String(message));
-                    sendMessage(out,message, enc);
+                    msgBack = enc.generateFrame(message);
+                    sendMessage(out,msgBack);
+
                 }else if(opcode==0x9){//ping
                     byte length = (byte)in.read();
                     System.out.println("Ping! length: "+Integer.toBinaryString(length));
-                    enc.generateStatusFrame("PONG");
+                    msgBack = enc.generateStatusFrame("PONG");
+                    sendMessage(out,msgBack);
+
                 }else if(opcode==0xA){//pong
                     byte length = (byte)in.read();
                     System.out.println("Pong! length: "+Integer.toBinaryString(length));
+
                 }else if(opcode==0x8){//close
                     byte length = (byte)in.read();
                     System.out.println("Close! length: "+Integer.toBinaryString(length));
-                    enc.generateStatusFrame("CLOSE");
-                }else{
+                    msgBack = enc.generateStatusFrame("CLOSE");
+                    sendMessage(out,msgBack);
 
+                }else{
                     System.out.println("Unhandled opcode: "+Integer.toBinaryString(opcode));
                     break;
                 }
+                msgBack = null;
+                msgBack = enc.generateStatusFrame("PING");
+                sendMessage(out,msgBack);
+                System.out.println("ping sendt: "+ Arrays.toString(msgBack));
+
+                type = (byte)in.read();
+                opcode = type & 0x0F;
+                byte length = (byte)in.read();
+                byte[] mask = new byte[4];
+                in.read(mask,0,4);
+                System.out.println("Pong! "+Integer.toBinaryString(opcode)+", length: "+Integer.toBinaryString(length));
+                System.out.println("Mask: "+ Arrays.toString(mask));
+
             }
 
         } catch (IOException e) {
@@ -104,12 +124,9 @@ public class Websocket {
 
 
 
-    private void sendMessage(OutputStream out, byte[] message, Encoding enc) throws IOException {
-        byte[] msgBack = enc.generateFrame(message);
-        out.write(msgBack, 0,msgBack.length);
+    private void sendMessage(OutputStream out, byte[] message) throws IOException {
+        out.write(message, 0,message.length);
         out.flush();
-        System.out.println("\n"+new String(msgBack));
-        System.out.println("sendt!");
     }
 
     //Server close
