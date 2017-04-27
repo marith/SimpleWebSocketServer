@@ -45,13 +45,21 @@ public class Websocket {
                     System.out.println(new String(message));
                     sendMessage(out,message, enc);
                 }else if(opcode==0x9){//ping
-
+                    byte length = (byte)in.read();
+                    System.out.println("Ping! length: "+Integer.toBinaryString(length));
+                    enc.generateStatusFrame("PONG");
                 }else if(opcode==0xA){//pong
-
+                    byte length = (byte)in.read();
+                    System.out.println("Pong! length: "+Integer.toBinaryString(length));
                 }else if(opcode==0x8){//close
+                    byte length = (byte)in.read();
+                    System.out.println("Close! length: "+Integer.toBinaryString(length));
+                    enc.generateStatusFrame("CLOSE");
+                }else{
 
+                    System.out.println("Unhandled opcode: "+Integer.toBinaryString(opcode));
+                    break;
                 }
-                break;
             }
 
         } catch (IOException e) {
