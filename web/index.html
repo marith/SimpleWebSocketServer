@@ -32,8 +32,6 @@
         //When this file is fully loaded, initialize board with context
         $(document).ready(function(){
             ws = new WebSocket("ws://localhost:3001");
-            //ws = new WebSocket("ws://echo.websocket.org/");
-
 
             ws.onopen = function() {
                 $("#connection_label").html("Chat online");
@@ -46,7 +44,6 @@
 
 
             ws.onmessage = function(event) {
-                alert("event!"+event.data);
                 $("#display").append(event.data);
             };
 
