@@ -28,20 +28,18 @@ public class Websocket{
     public void connect(int port) throws IOException {
         server = new ServerSocket(port);
 
-        while (isRunning) {
-            Socket connection = server.accept();
-            Thread client = new ClientConnection(connection);
-            syncList.add(client); // Adds the running threads (clients) to a list
-            client.start();
-        }
+        Thread threadHandler = new ThreadHandler();
+        threadHandler.start();
     }
 
     public void sendMessage(String message) throws IOException {
+        Encoding enc = new Encoding();
         byte[] byteMsg = message.getBytes(Charset.forName("UTF-8"));
+        byte[] framedMsg = enc.generateFrame(byteMsg);
 
         for (int i = 0; i < syncList.size(); i++) {
             ClientConnection con = (ClientConnection) syncList.get(i);
-            con.sendMessage(byteMsg);
+            con.sendMessage(framedMsg);
         }
     }
 
@@ -221,4 +219,27 @@ public class Websocket{
         }
 
     }
+
+    class ThreadHandler extends Thread {
+
+        public void run(){
+            while(isRunning) {
+                Socket connection = null;
+                try {
+                    connection = server.accept();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                Thread client = null;
+                try {
+                    client = new ClientConnection(connection);
+                } catch (SocketException e) {
+                    e.printStackTrace();
+                }
+                syncList.add(client); // Adds the running threads (clients) to a list
+                client.start();
+            }
+        }
+    }
 }
+
