@@ -9,7 +9,6 @@ import java.nio.charset.Charset;
 import java.util.*;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.Arrays;
 import java.util.Scanner;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Matcher;
@@ -21,14 +20,14 @@ import java.util.regex.Pattern;
 public class Websocket{
     private static ArrayList<Thread> threads = new ArrayList<>();
     private static List<Thread> syncList = Collections.synchronizedList(threads);
-    ServerSocket server;
-    boolean isRunning = true;
-    private LinkedBlockingQueue<String> messageQueue = new LinkedBlockingQueue();
+    private static LinkedBlockingQueue<String> messageQueue = new LinkedBlockingQueue();
+    private static volatile boolean isRunning = true;
+    private static ServerSocket server;
+    private static Thread threadHandler;
 
     public void connect(int port) throws IOException {
-        server = new ServerSocket(port);
-
-        Thread threadHandler = new ThreadHandler();
+        this.server = new ServerSocket(port);
+        this.threadHandler = new ThreadHandler();
         threadHandler.start();
     }
 
@@ -45,98 +44,90 @@ public class Websocket{
 
     public String recieveMessage(){
         String message = null;
-        System.out.println("Server venter på message...");
         try {
             message = messageQueue.take();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        System.out.println("Message: "+message);
         return message;
     }
 
     public void close() throws IOException {
+        System.out.println("SERVER IS CLOSING");
         isRunning = false;
+        threadHandler.interrupt();
         server.close();
     }
 
-    // For testing
-    public static void main(String[] args) throws IOException {
-        Websocket ws = new Websocket();
-        ws.connect(3001);
-
-        while(true){
-            System.out.println("Server while-løkke!");
-            String message = ws.recieveMessage();
-            ws.sendMessage(message);
+    private void removeClient(ClientConnection client){
+        for(int i=0; i<syncList.size();i++){
+            if(syncList.get(i).equals(client)){
+                syncList.remove(i);
+            }
         }
     }
-
 
     class ClientConnection extends Thread {
         private Socket client;
         private InputStream in;
         private OutputStream out;
+        private Encoding enc;
+        private volatile boolean isClosing=false;
 
         public ClientConnection(Socket client) throws SocketException {
             this.client = client;
             client.setSoTimeout(4000);
+            this.enc = new Encoding();
+        }
+        public void setIsClosing(){
+            this.isClosing = true;
         }
 
         public void run() {
+            //Set inputstream and outputstream, and perform handshake
             try {
                 in = client.getInputStream();
                 out = client.getOutputStream();
-                if (!handshake(in, out)) {
+                if (!handshake(in, out)) { //TODO: exception håndtering? Hvilken exception?
                     throw new Exception("Error connecting to client");
                 }
-                Encoding enc = new Encoding();
-
-                while (true) {
+                while (!isClosing) {
                     try {
                         byte type = (byte) in.read();
                         int opcode = type & 0x0F;
-                        byte[] msgBack = null;
+                        switch (opcode){
+                            case 0x1: //Text frame
+                                byte[] message = readTextMessage();
+                                String messageStr = new String(message, "UTF-8");
+                                messageQueue.add(messageStr);
+                                break;
 
-                        //TEXT-FRAME
-                        if (opcode == 0x1) {
-                            byte[] message = recieveMessage(enc);
-                            String messageStr = new String(message, "UTF-8");
-                            System.out.println("In thread: "+messageStr);
-                            messageQueue.add(messageStr);
-                            System.out.println("Peek:"+messageQueue.peek());
-                        }
-                        //PING-FRAME
-                        else if (opcode == 0x9) {//ping
-                            byte length = (byte) in.read();
-                            System.out.println("Ping! length: " + Integer.toBinaryString(length));
-                            msgBack = enc.generateStatusFrame("PONG");
-                            sendMessage(msgBack);
-                        }
-                        //CLOSE-FRAME
-                        else if (opcode == 0x8) {//close
-                            byte length = (byte) in.read();
-                            System.out.println("Close! length: " + Integer.toBinaryString(length));
-                            msgBack = enc.generateStatusFrame("CLOSE");
-                            sendMessage(msgBack);
+                            case 0x9: //ping frame
+                                readControlMessage();
+                                sendMessage(enc.generateStatusFrame("PONG"));
+                                break;
 
-                        } else {
-                            System.out.println("Unhandled opcode: " + Integer.toBinaryString(opcode));
-                            break;
+                            case 0x8: //close frame
+                                readControlMessage();
+                                sendMessage(enc.generateStatusFrame("CLOSE"));
+                                client.close();
+                                isClosing = true;
+                                removeClient(this);
+                                break;
+
+                            default:
+                                throw new IOException("Unsupported message type."); //TODO: throw different exception?
                         }
-                        //PING IF SOCKET-TIMEOUT
-                    } catch (SocketTimeoutException ste) {
+
+                    } //PING IF SOCKET-TIMEOUT
+                    catch (SocketTimeoutException ste) {
                         byte[] msgBack = enc.generateStatusFrame("PING");
                         sendMessage(msgBack);
-                        System.out.println("PING!");
 
                         byte type = (byte) in.read();
                         int opcode = type & 0x0F;
                         if (opcode == 0xA) {
-                            byte length = (byte) in.read();
-                            byte[] mask = new byte[4];
-                            in.read(mask, 0, 4);
-                            System.out.println("PONG!\n");
+                            readControlMessage();
                         } else {
                             //TODO: feilhåndtering
                             System.out.println("ikke pong.. :(");
@@ -149,10 +140,16 @@ public class Websocket{
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
-                try {
-                    client.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if(client.isConnected()){
+                    try {
+                        System.out.println("Connectin to client closing with closing frame.");
+                        byte[] closingframe = enc.generateStatusFrame("CLOSE");
+                        sendMessage(closingframe);
+                        client.close();
+                    } catch (IOException e) {
+                        System.out.println("Couldn't close!");
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -170,7 +167,6 @@ public class Websocket{
                 }
                 String key = data.substring(match.end(), match.end() + 24);
 
-                Encoding enc = new Encoding();
                 String response = enc.generateServerResponse(key);
                 byte[] responseByte = response.getBytes();
                 out.write(responseByte);
@@ -184,24 +180,35 @@ public class Websocket{
             }
         }
 
-        private byte[] recieveMessage(Encoding enc) throws IOException {
-            int size = (0x000000FF) & in.read() - 128;
+        private byte[] readControlMessage() throws IOException {
+            int lengthRead = in.read();
+            if(lengthRead>0){
+                throw new IOException("Unmasked message from client");
+            }
+            int length = (0x000000FF) & lengthRead - 128;
+            byte[] input = new byte[4+length];
+            in.read(input, 0, input.length);
+            byte[] payload = enc.maskData(input);
+            return payload;
+        }
 
-            if (size == 126) {
-                System.out.println("Størrelsen er 126!\n");
+        private byte[] readTextMessage() throws IOException {
+            int length = (0x000000FF) & in.read() - 128; //if size is <126, this is the length
+
+            if (length == 126) { //if "length" is 126: read next two bytes for real length
                 byte ch1 = (byte) in.read();
                 byte ch2 = (byte) in.read();
                 byte[] byteArr = {ch1, ch2};
 
-                size = ((ch1 << 8) + (ch2 << 0)) & 0xFF;
-            } else if (size == 127) {
+                length = ((ch1 << 8) + (ch2 << 0)) & 0xFF;
+            } else if (length == 127) { //if "length" is 127: read next 8 bytes for real length
                 byte[] buffer = new byte[8];
                 in.read(buffer, 4, 8);
-                //size = new size
+                //size = new size TODO: implementer 64bit lengde
                 System.out.println("size 3: " + new String(buffer));
             }
 
-            byte[] payload = new byte[size + 4];
+            byte[] payload = new byte[4 + length]; //read mask + length
             in.read(payload);
 
             byte[] message = enc.maskData(payload);
@@ -213,20 +220,21 @@ public class Websocket{
             out.flush();
         }
 
-        //Server close
+
         public void close() {
-
+            isClosing = true;
         }
-
-    }
+    } //ClientConnection end
 
     class ThreadHandler extends Thread {
-
         public void run(){
             while(isRunning) {
                 Socket connection = null;
                 try {
                     connection = server.accept();
+                } catch (SocketException e) {
+                    System.out.println("Server is closed");
+                    break;
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -236,10 +244,30 @@ public class Websocket{
                 } catch (SocketException e) {
                     e.printStackTrace();
                 }
-                syncList.add(client); // Adds the running threads (clients) to a list
-                client.start();
+                if (!(client == null)) {
+                    syncList.add(client); // Adds the running threads (clients) to a list
+                    client.start();
+                } else {
+                    //TODO: unntakshåntering??
+                }
+            }
+            for(int i=0; i<syncList.size();i++){
+                ClientConnection client = (ClientConnection) syncList.get(i);
+                client.setIsClosing();
             }
         }
+        public void cancel() { interrupt(); }
+    }
+    // For testing
+    public static void main(String[] args) throws IOException {
+        Websocket ws = new Websocket();
+        ws.connect(3001);
+
+        for(int i=0; i<5; i++){
+            String message = ws.recieveMessage();
+            ws.sendMessage(message);
+        }
+        ws.close();
     }
 }
 

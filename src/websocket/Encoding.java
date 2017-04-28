@@ -82,9 +82,6 @@ public class Encoding {
             } else {
                 System.err.print("Do some error handling here");
             }
-            System.out.println("opcode bin: "+Integer.toBinaryString(opcode));
-            System.out.println("opcode: "+opcode+"\n");
-
             output.write(opcode);
             output.write(length);
             output.write(input);
