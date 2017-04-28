@@ -17,17 +17,18 @@ import java.util.regex.Pattern;
 /**
  * Created by Marit on 25.04.2017.
  */
+
 public class Websocket{
     private static ArrayList<Thread> threads = new ArrayList<>();
     private static List<Thread> syncList = Collections.synchronizedList(threads);
-    private static LinkedBlockingQueue<String> messageQueue = new LinkedBlockingQueue();
+    private static LinkedBlockingQueue<String> messageQueue = new LinkedBlockingQueue<String>();
     private static volatile boolean isRunning = true;
     private static ServerSocket server;
     private static Thread threadHandler;
 
     public void connect(int port) throws IOException {
-        this.server = new ServerSocket(port);
-        this.threadHandler = new ThreadHandler();
+        server = new ServerSocket(port);
+        threadHandler = new ThreadHandler();
         threadHandler.start();
     }
 
@@ -89,7 +90,7 @@ public class Websocket{
                 in = client.getInputStream();
                 out = client.getOutputStream();
                 if (!handshake(in, out)) { //TODO: exception håndtering? Hvilken exception?
-                    throw new Exception("Error connecting to client");
+                    throw new IOException("Error connecting to client");
                 }
                 while (!isClosing) {
                     try {
@@ -135,11 +136,11 @@ public class Websocket{
                         }
                     }
                 }
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 e.printStackTrace();
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
+            }
+            finally {
                 if(client.isConnected()){
                     try {
                         System.out.println("Connectin to client closing with closing frame.");
@@ -188,8 +189,7 @@ public class Websocket{
             int length = (0x000000FF) & lengthRead - 128;
             byte[] input = new byte[4+length];
             in.read(input, 0, input.length);
-            byte[] payload = enc.maskData(input);
-            return payload;
+            return enc.maskData(input);
         }
 
         private byte[] readTextMessage() throws IOException {
@@ -198,9 +198,8 @@ public class Websocket{
             if (length == 126) { //if "length" is 126: read next two bytes for real length
                 byte ch1 = (byte) in.read();
                 byte ch2 = (byte) in.read();
-                byte[] byteArr = {ch1, ch2};
+                length = ((ch1 << 8) + (ch2)) & 0xFF;
 
-                length = ((ch1 << 8) + (ch2 << 0)) & 0xFF;
             } else if (length == 127) { //if "length" is 127: read next 8 bytes for real length
                 byte[] buffer = new byte[8];
                 in.read(buffer, 4, 8);
@@ -211,15 +210,13 @@ public class Websocket{
             byte[] payload = new byte[4 + length]; //read mask + length
             in.read(payload);
 
-            byte[] message = enc.maskData(payload);
-            return message;
+            return enc.maskData(payload);
         }
 
-        protected void sendMessage(byte[] message) throws IOException {
+        private void sendMessage(byte[] message) throws IOException {
             out.write(message, 0, message.length);
             out.flush();
         }
-
 
         public void close() {
             isClosing = true;
@@ -248,6 +245,7 @@ public class Websocket{
                     syncList.add(client); // Adds the running threads (clients) to a list
                     client.start();
                 } else {
+                    System.out.println("Client is null!");
                     //TODO: unntakshåntering??
                 }
             }
@@ -256,18 +254,6 @@ public class Websocket{
                 client.setIsClosing();
             }
         }
-        public void cancel() { interrupt(); }
-    }
-    // For testing
-    public static void main(String[] args) throws IOException {
-        Websocket ws = new Websocket();
-        ws.connect(3001);
-
-        for(int i=0; i<5; i++){
-            String message = ws.recieveMessage();
-            ws.sendMessage(message);
-        }
-        ws.close();
     }
 }
 
