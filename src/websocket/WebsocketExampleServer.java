@@ -10,10 +10,10 @@ public class WebsocketExampleServer {
         Websocket ws = new Websocket();
         ws.connect(3001);
 
-        for(int i=0; i<5; i++){
+        while(true){
             String message = ws.recieveMessage();
             ws.sendMessage(message);
         }
-        ws.close();
+        //ws.close();
     }
 }

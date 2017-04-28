@@ -68,16 +68,17 @@ public class Websocket{
         }
     }
 
-    class ClientConnection extends Thread {
+    private class ClientConnection extends Thread {
         private Socket client;
         private InputStream in;
         private OutputStream out;
         private Encoding enc;
         private volatile boolean isClosing=false;
+        private boolean ping=false;
 
         public ClientConnection(Socket client) throws SocketException {
             this.client = client;
-            client.setSoTimeout(4000);
+            client.setSoTimeout(5000);
             this.enc = new Encoding();
         }
         public void setIsClosing(){
@@ -89,7 +90,7 @@ public class Websocket{
             try {
                 in = client.getInputStream();
                 out = client.getOutputStream();
-                if (!handshake(in, out)) { //TODO: exception håndtering? Hvilken exception?
+                if (!handshake(in, out)) {
                     throw new IOException("Error connecting to client");
                 }
                 while (!isClosing) {
@@ -107,32 +108,30 @@ public class Websocket{
                                 readControlMessage();
                                 sendMessage(enc.generateStatusFrame("PONG"));
                                 break;
+                            case 0xA: //pong frame
+                                readControlMessage();
+                                ping = false;
+                                break;
 
                             case 0x8: //close frame
                                 readControlMessage();
-                                sendMessage(enc.generateStatusFrame("CLOSE"));
-                                client.close();
                                 isClosing = true;
                                 removeClient(this);
                                 break;
 
                             default:
-                                throw new IOException("Unsupported message type."); //TODO: throw different exception?
+                                throw new IOException("Unsupported message type.");
                         }
 
                     } //PING IF SOCKET-TIMEOUT
                     catch (SocketTimeoutException ste) {
-                        byte[] msgBack = enc.generateStatusFrame("PING");
-                        sendMessage(msgBack);
-
-                        byte type = (byte) in.read();
-                        int opcode = type & 0x0F;
-                        if (opcode == 0xA) {
-                            readControlMessage();
-                        } else {
-                            //TODO: feilhåndtering
-                            System.out.println("ikke pong.. :(");
-                            break;
+                        if(ping){
+                            isClosing=true;
+                            System.out.println("ping: har allerede sendt ping...");
+                        }else{
+                            byte[] msgBack = enc.generateStatusFrame("PING");
+                            sendMessage(msgBack);
+                            ping = true;
                         }
                     }
                 }
@@ -182,8 +181,8 @@ public class Websocket{
         }
 
         private byte[] readControlMessage() throws IOException {
-            int lengthRead = in.read();
-            if(lengthRead>0){
+            byte lengthRead = (byte)in.read();
+            if((lengthRead >>> 7) == 0){
                 throw new IOException("Unmasked message from client");
             }
             int length = (0x000000FF) & lengthRead - 128;
@@ -223,7 +222,7 @@ public class Websocket{
         }
     } //ClientConnection end
 
-    class ThreadHandler extends Thread {
+    private class ThreadHandler extends Thread {
         public void run(){
             while(isRunning) {
                 Socket connection = null;
@@ -244,9 +243,6 @@ public class Websocket{
                 if (!(client == null)) {
                     syncList.add(client); // Adds the running threads (clients) to a list
                     client.start();
-                } else {
-                    System.out.println("Client is null!");
-                    //TODO: unntakshåntering??
                 }
             }
             for(int i=0; i<syncList.size();i++){
