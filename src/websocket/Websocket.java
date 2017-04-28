@@ -189,7 +189,7 @@ public class Websocket{
             int length = (0x000000FF) & lengthRead - 128;
             byte[] input = new byte[4+length];
             in.read(input, 0, input.length);
-            return enc.maskData(input);
+            return enc.unmaskData(input);
         }
 
         private byte[] readTextMessage() throws IOException {
@@ -210,7 +210,7 @@ public class Websocket{
             byte[] payload = new byte[4 + length]; //read mask + length
             in.read(payload);
 
-            return enc.maskData(payload);
+            return enc.unmaskData(payload);
         }
 
         private void sendMessage(byte[] message) throws IOException {
