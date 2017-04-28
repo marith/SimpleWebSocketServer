@@ -31,17 +31,17 @@ public class Encoding {
     }
 
     // Masks the payload with XOR encryption
-    public byte[] maskData(byte[] payload){
-        byte[] maskingKey = new byte[4]; // first 32 bits of input is masking key
+    public byte[] unmaskData(byte[] input){
+        byte[] maskingKey = new byte[4]; // first 4 bytes of input is masking key
 
         for(int i = 0; i < maskingKey.length; i++){
-            maskingKey[i] = payload[i];
+            maskingKey[i] = input[i];
         }
 
-        byte[] result = new byte[payload.length-4];
+        byte[] result = new byte[input.length-4];
 
         for(int i = 0; i < result.length; i++){
-           result[i] = (byte) (payload[i+4] ^ maskingKey[i%4]);
+           result[i] = (byte) (input[i+4] ^ maskingKey[i%4]);
         }
 
         return result;
