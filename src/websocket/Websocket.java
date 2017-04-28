@@ -142,7 +142,7 @@ public class Websocket{
             finally {
                 if(client.isConnected()){
                     try {
-                        System.out.println("Connectin to client closing with closing frame.");
+                        System.out.println("Connecting to client closing with closing frame.");
                         byte[] closingframe = enc.generateStatusFrame("CLOSE");
                         sendMessage(closingframe);
                         client.close();
