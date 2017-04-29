@@ -1,4 +1,4 @@
-package websocket.example;
+package example;
 
 import websocket.WebSocket;
 
@@ -24,7 +24,7 @@ public class ExampleEchoServer extends WebSocket {
 
     public static void main(String[] args) throws IOException {
         ExampleEchoServer server = new ExampleEchoServer();
-        server.connect(3001);
+        server.connect(3001,5000);
 
         server.echoMessage(3);
 
