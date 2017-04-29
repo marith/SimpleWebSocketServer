@@ -14,12 +14,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class WebSocket {
-
-/**
- *
- */
-public class Websocket{
+public class WebSocket{
     private static ArrayList<Thread> threads = new ArrayList<>();
     private static List<Thread> syncList = Collections.synchronizedList(threads);
     private static LinkedBlockingQueue<String> messageQueue = new LinkedBlockingQueue<String>();
