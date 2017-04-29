@@ -1,4 +1,4 @@
-# Websocket
+# Simple WebSocket server library
 This is a simple WebSocket server Java library, created as a project in the course Network programming (TDAT2004) at NTNU, Trondheim. 
 The library is based off the WebSocket protocol RFC6455 by IETF. It has support for multiple clients via multithreading, and can send and recieve text messages up to 65 000 bytes.
 <br>
