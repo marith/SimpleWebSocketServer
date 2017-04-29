@@ -1,4 +1,4 @@
-package java.no.ntnu.websocket;
+package websocket;
 
 import org.junit.*;
 
