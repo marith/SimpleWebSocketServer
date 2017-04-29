@@ -14,10 +14,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Created by Marit on 25.04.2017.
- */
 
+/**
+ *
+ */
 public class Websocket{
     private static ArrayList<Thread> threads = new ArrayList<>();
     private static List<Thread> syncList = Collections.synchronizedList(threads);
@@ -26,12 +26,23 @@ public class Websocket{
     private static ServerSocket server;
     private static Thread threadHandler;
 
+
+    /**
+     *
+     * @param port - port number where the websocket
+     * @throws IOException
+     */
+
     public void connect(int port) throws IOException {
         server = new ServerSocket(port);
         threadHandler = new ThreadHandler();
         threadHandler.start();
     }
 
+    /**
+     * @param message
+     * @throws IOException
+     */
     public void sendMessage(String message) throws IOException {
         Encoding enc = new Encoding();
         byte[] byteMsg = message.getBytes(Charset.forName("UTF-8"));
@@ -43,6 +54,9 @@ public class Websocket{
         }
     }
 
+    /**
+     * @return
+     */
     public String recieveMessage(){
         String message = null;
         try {
@@ -53,6 +67,9 @@ public class Websocket{
         return message;
     }
 
+    /**
+     * @throws IOException
+     */
     public void close() throws IOException {
         System.out.println("SERVER IS CLOSING");
         isRunning = false;
@@ -97,6 +114,7 @@ public class Websocket{
                     try {
                         byte type = (byte) in.read();
                         int opcode = type & 0x0F;
+                        System.out.println("opcode: "+Integer.toBinaryString(opcode));
                         switch (opcode){
                             case 0x1: //Text frame
                                 byte[] message = readTextMessage();
@@ -182,7 +200,7 @@ public class Websocket{
 
         private byte[] readControlMessage() throws IOException {
             byte lengthRead = (byte)in.read();
-            if((lengthRead >>> 7) == 0){
+            if(((lengthRead >>> 7)&0xFF) == 0){
                 throw new IOException("Unmasked message from client");
             }
             int length = (0x000000FF) & lengthRead - 128;
@@ -195,15 +213,22 @@ public class Websocket{
             int length = (0x000000FF) & in.read() - 128; //if size is <126, this is the length
 
             if (length == 126) { //if "length" is 126: read next two bytes for real length
-                byte ch1 = (byte) in.read();
-                byte ch2 = (byte) in.read();
-                length = ((ch1 << 8) + (ch2)) & 0xFF;
+                byte[] buffer = new byte[2];
+                buffer[0]=(byte) in.read();
+                buffer[1]=(byte) in.read();
+                length = (buffer[0] & 0xFF) << 8 | (buffer[1] & 0xFF);
 
             } else if (length == 127) { //if "length" is 127: read next 8 bytes for real length
+                //NOT IMPLEMENTED
+                /*
                 byte[] buffer = new byte[8];
-                in.read(buffer, 4, 8);
-                //size = new size TODO: implementer 64bit lengde
-                System.out.println("size 3: " + new String(buffer));
+                in.read(buffer, 2, 8);
+                long lengthLong =    (buffer[0] & 0xFF) << 56 | (buffer[1] & 0xFF) << 48|
+                            (buffer[2] & 0xFF) << 40 | (buffer[3] & 0xFF) << 32|
+                            (buffer[4] & 0xFF) << 24 | (buffer[5] & 0xFF) << 16|
+                            (buffer[6] & 0xFF) << 8  | (buffer[7] & 0xFF);
+                */
+                throw new IOException("Message too large.");
             }
 
             byte[] payload = new byte[4 + length]; //read mask + length
