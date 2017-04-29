@@ -9,23 +9,20 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
-/**
- * Created by AnitaKristineAune on 28.04.2017.
- */
 public class DataHandlerTest {
-    private DataHandler enc;
+    private DataHandler dh;
 
 
     @Before
     public void setUp() throws Exception {
-        enc = new DataHandler();
+        dh = new DataHandler();
 
     }
 
     @Test
     public void testEncodeKey() throws Exception {
         String key = "dGhlIHNhbXBsZSBub25jZQ==";
-        String res = enc.encodeKey(key);
+        String res = dh.encodeKey(key);
 
         String validRes = "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="; // Valid result
         String invalidRes = "w5pfFvEi2y6Q2kGGbBhtRbJLxOo="; // Invalid result
@@ -50,7 +47,7 @@ public class DataHandlerTest {
                 (byte) 0b00100001, (byte) 0b11100011, (byte) 0b10110000, (byte) 0b10110101, (byte) 0b00111101,
                 (byte) 0b11100011};
 
-        byte[]res = enc.unmaskData(input);
+        byte[]res = dh.unmaskData(input);
 
         String validRes = "<span><b>Anita</b>, <i>11:53:31 : </i>Hei</span><br>";
         String invalidRes = "Hei";
@@ -82,7 +79,7 @@ public class DataHandlerTest {
 
 
         // Small input
-        byte[] smallResult = enc.generateFrame(smallInput);
+        byte[] smallResult = dh.generateFrame(smallInput);
         byte[] smallExpResult;
 
         byte[] expSmallFrame = {(byte)0b10000001, (byte) 63};
@@ -102,7 +99,7 @@ public class DataHandlerTest {
         mediumInput = out.toByteArray();
         out.reset();
 
-        byte[] mediumResult = enc.generateFrame(mediumInput);
+        byte[] mediumResult = dh.generateFrame(mediumInput);
 
         byte[] expMediumFrame = {(byte)0b10000001, (byte) 126, (byte) (126 >>> 8) & 0xFF, (byte) (126 & 0xFF)};
 
@@ -119,7 +116,7 @@ public class DataHandlerTest {
 
     @Test
     public void testGeneratePingStatusFrame() throws Exception {
-        byte[] pingRes = enc.generateStatusFrame("PING");
+        byte[] pingRes = dh.generateStatusFrame("PING");
         byte[] expPing = {(byte)0b10001001, 0b00000000};
 
         assertArrayEquals(pingRes,expPing);
@@ -127,7 +124,7 @@ public class DataHandlerTest {
     }
     @Test
     public void testGeneratePongStatusFrame() throws Exception {
-        byte[] pongRes = enc.generateStatusFrame("PONG");
+        byte[] pongRes = dh.generateStatusFrame("PONG");
         byte[] expPong = {(byte) 0b10001010, 0b00000000};
 
         assertArrayEquals(pongRes,expPong);
@@ -135,7 +132,7 @@ public class DataHandlerTest {
 
     @Test
     public void testGenerateClosingFrame() throws Exception {
-        byte[] closeRes = enc.generateStatusFrame("CLOSE");
+        byte[] closeRes = dh.generateStatusFrame("CLOSE");
         byte[] expClose = {(byte) 0b10001000, 0b00000000};
 
         assertArrayEquals(closeRes,expClose);
@@ -153,7 +150,7 @@ public class DataHandlerTest {
                 "Connection: Upgrade\r\n" +
                 "Sec-WebSocket-Accept: w5pfFvEi2y6Q2kGGbBhtRbJLxOo=\r\n\r\n";
 
-        String resHandshake = enc.generateServerResponse("dGhlIHNhbXBsZSBub25jZQ==");
+        String resHandshake = dh.generateServerResponse("dGhlIHNhbXBsZSBub25jZQ==");
 
         assertEquals(resHandshake,validHandshake);
         assertNotEquals(resHandshake,invalidHandshake);

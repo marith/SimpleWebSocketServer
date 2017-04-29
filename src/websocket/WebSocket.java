@@ -14,10 +14,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Created by Marit on 25.04.2017.
- */
-
 public class WebSocket {
     private static ArrayList<Thread> threads = new ArrayList<>();
     private static List<Thread> syncList = Collections.synchronizedList(threads);
@@ -33,9 +29,9 @@ public class WebSocket {
     }
 
     public void sendMessage(String message) throws IOException {
-        DataHandler enc = new DataHandler();
+        DataHandler dh = new DataHandler();
         byte[] byteMsg = message.getBytes(Charset.forName("UTF-8"));
-        byte[] framedMsg = enc.generateFrame(byteMsg);
+        byte[] framedMsg = dh.generateFrame(byteMsg);
 
         for (int i = 0; i < syncList.size(); i++) {
             ClientConnection con = (ClientConnection) syncList.get(i);
@@ -72,16 +68,16 @@ public class WebSocket {
         private Socket client;
         private InputStream in;
         private OutputStream out;
-        private DataHandler enc;
+        private DataHandler dh;
         private volatile boolean isClosing=false;
         private boolean ping=false;
 
-        public ClientConnection(Socket client) throws SocketException {
+        private ClientConnection(Socket client) throws SocketException {
             this.client = client;
             client.setSoTimeout(5000);
-            this.enc = new DataHandler();
+            this.dh = new DataHandler();
         }
-        public void setIsClosing(){
+        private void setIsClosing(){
             this.isClosing = true;
         }
 
@@ -107,7 +103,7 @@ public class WebSocket {
 
                             case 0x9: //ping frame
                                 readControlMessage();
-                                sendMessage(enc.generateStatusFrame("PONG"));
+                                sendMessage(dh.generateStatusFrame("PONG"));
                                 break;
                             case 0xA: //pong frame
                                 readControlMessage();
@@ -130,7 +126,7 @@ public class WebSocket {
                             isClosing=true;
                             System.out.println("ping: har allerede sendt ping...");
                         }else{
-                            byte[] msgBack = enc.generateStatusFrame("PING");
+                            byte[] msgBack = dh.generateStatusFrame("PING");
                             sendMessage(msgBack);
                             ping = true;
                         }
@@ -144,7 +140,7 @@ public class WebSocket {
                 if(client.isConnected()){
                     try {
                         System.out.println("Connecting to client closing with closing frame.");
-                        byte[] closingframe = enc.generateStatusFrame("CLOSE");
+                        byte[] closingframe = dh.generateStatusFrame("CLOSE");
                         sendMessage(closingframe);
                         client.close();
                     } catch (IOException e) {
@@ -168,7 +164,7 @@ public class WebSocket {
                 }
                 String key = data.substring(match.end(), match.end() + 24);
 
-                String response = enc.generateServerResponse(key);
+                String response = dh.generateServerResponse(key);
                 byte[] responseByte = response.getBytes();
                 out.write(responseByte);
                 return true;
@@ -189,7 +185,7 @@ public class WebSocket {
             int length = (0x000000FF) & lengthRead - 128;
             byte[] input = new byte[4+length];
             in.read(input, 0, input.length);
-            return enc.unmaskData(input);
+            return dh.unmaskData(input);
         }
 
         private byte[] readTextMessage() throws IOException {
@@ -207,21 +203,17 @@ public class WebSocket {
                 System.out.println("size 3: " + new String(buffer));
             }
 
-            byte[] payload = new byte[4 + length]; //read mask + length
-            in.read(payload);
+            byte[] input = new byte[4 + length]; //read mask + length
+            in.read(input);
 
-            return enc.unmaskData(payload);
+            return dh.unmaskData(input);
         }
 
         private void sendMessage(byte[] message) throws IOException {
             out.write(message, 0, message.length);
             out.flush();
         }
-
-        public void close() {
-            isClosing = true;
-        }
-    } //ClientConnection end
+    }
 
     private class ThreadHandler extends Thread {
         public void run(){
@@ -253,4 +245,3 @@ public class WebSocket {
         }
     }
 }
-
