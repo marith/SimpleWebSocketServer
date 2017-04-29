@@ -14,6 +14,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+public class WebSocket {
 
 /**
  *
@@ -44,9 +45,9 @@ public class Websocket{
      * @throws IOException
      */
     public void sendMessage(String message) throws IOException {
-        Encoding enc = new Encoding();
+        DataHandler dh = new DataHandler();
         byte[] byteMsg = message.getBytes(Charset.forName("UTF-8"));
-        byte[] framedMsg = enc.generateFrame(byteMsg);
+        byte[] framedMsg = dh.generateFrame(byteMsg);
 
         for (int i = 0; i < syncList.size(); i++) {
             ClientConnection con = (ClientConnection) syncList.get(i);
@@ -89,16 +90,16 @@ public class Websocket{
         private Socket client;
         private InputStream in;
         private OutputStream out;
-        private Encoding enc;
+        private DataHandler dh;
         private volatile boolean isClosing=false;
         private boolean ping=false;
 
-        public ClientConnection(Socket client) throws SocketException {
+        private ClientConnection(Socket client) throws SocketException {
             this.client = client;
             client.setSoTimeout(5000);
-            this.enc = new Encoding();
+            this.dh = new DataHandler();
         }
-        public void setIsClosing(){
+        private void setIsClosing(){
             this.isClosing = true;
         }
 
@@ -124,7 +125,7 @@ public class Websocket{
 
                             case 0x9: //ping frame
                                 readControlMessage();
-                                sendMessage(enc.generateStatusFrame("PONG"));
+                                sendMessage(dh.generateStatusFrame("PONG"));
                                 break;
                             case 0xA: //pong frame
                                 readControlMessage();
@@ -147,7 +148,7 @@ public class Websocket{
                             isClosing=true;
                             System.out.println("ping: har allerede sendt ping...");
                         }else{
-                            byte[] msgBack = enc.generateStatusFrame("PING");
+                            byte[] msgBack = dh.generateStatusFrame("PING");
                             sendMessage(msgBack);
                             ping = true;
                         }
@@ -161,7 +162,7 @@ public class Websocket{
                 if(client.isConnected()){
                     try {
                         System.out.println("Connecting to client closing with closing frame.");
-                        byte[] closingframe = enc.generateStatusFrame("CLOSE");
+                        byte[] closingframe = dh.generateStatusFrame("CLOSE");
                         sendMessage(closingframe);
                         client.close();
                     } catch (IOException e) {
@@ -185,7 +186,7 @@ public class Websocket{
                 }
                 String key = data.substring(match.end(), match.end() + 24);
 
-                String response = enc.generateServerResponse(key);
+                String response = dh.generateServerResponse(key);
                 byte[] responseByte = response.getBytes();
                 out.write(responseByte);
                 return true;
@@ -206,7 +207,7 @@ public class Websocket{
             int length = (0x000000FF) & lengthRead - 128;
             byte[] input = new byte[4+length];
             in.read(input, 0, input.length);
-            return enc.unmaskData(input);
+            return dh.unmaskData(input);
         }
 
         private byte[] readTextMessage() throws IOException {
@@ -231,21 +232,17 @@ public class Websocket{
                 throw new IOException("Message too large.");
             }
 
-            byte[] payload = new byte[4 + length]; //read mask + length
-            in.read(payload);
+            byte[] input = new byte[4 + length]; //read mask + length
+            in.read(input);
 
-            return enc.unmaskData(payload);
+            return dh.unmaskData(input);
         }
 
         private void sendMessage(byte[] message) throws IOException {
             out.write(message, 0, message.length);
             out.flush();
         }
-
-        public void close() {
-            isClosing = true;
-        }
-    } //ClientConnection end
+    }
 
     private class ThreadHandler extends Thread {
         public void run(){
@@ -277,4 +274,3 @@ public class Websocket{
         }
     }
 }
-

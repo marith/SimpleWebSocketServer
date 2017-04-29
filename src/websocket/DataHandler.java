@@ -5,16 +5,12 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.util.Base64;
 
-/**
- * Created by AnitaKristineAune on 25.04.2017.
- *
- */
 
-public class Encoding {
+class DataHandler {
     private static String key;
 
     // Encodes the sec-websocket-key using the GUID-string. Uses SHA-1 and base64 to encode to a new key.
-    public String encodeKey(String key) throws Exception{
+    protected String encodeKey(String key) throws Exception{
         MessageDigest md = MessageDigest.getInstance("SHA-1"); // Gets SHA-1 algorithm
 
         String guid = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
@@ -25,13 +21,13 @@ public class Encoding {
         md.update(keyBytes);
         byte[] shaBytes = md.digest();
 
-        String encode = Base64.getEncoder().encodeToString(shaBytes);
+        String enc = Base64.getEncoder().encodeToString(shaBytes);
 
-        return encode;
+        return enc;
     }
 
     // Masks the payload with XOR encryption
-    public byte[] unmaskData(byte[] input){
+    protected byte[] unmaskData(byte[] input){
         byte[] maskingKey = new byte[4]; // first 4 bytes of input is masking key
 
         for(int i = 0; i < maskingKey.length; i++){
@@ -49,7 +45,7 @@ public class Encoding {
 
 
 
-    public byte[] generateFrame(byte[] input){ // Payload from byte array, msg is text
+    protected byte[] generateFrame(byte[] input){ // Payload from byte array, msg is text
 
         byte opcode = (byte)0b10000001;
         byte[] length = null;
@@ -95,7 +91,7 @@ public class Encoding {
     }
 
     // Generates a server initiated closing frame
-    public byte[] generateStatusFrame(String status){
+    protected byte[] generateStatusFrame(String status){
         byte opcode = (byte) 0;
         byte payloadSize = (byte) 0;
 
@@ -131,8 +127,8 @@ public class Encoding {
     }
 
     // Generates response handshake from server
-    public String generateServerResponse(String key) throws Exception{
-        Encoding accept = new Encoding();
+    protected String generateServerResponse(String key) throws Exception{
+        DataHandler accept = new DataHandler();
         String newKey = accept.encodeKey(key);
 
         String handshake = "HTTP/1.1 101 Switch Protocols\r\n" +
