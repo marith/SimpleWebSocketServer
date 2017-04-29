@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
  * Created by Marit on 25.04.2017.
  */
 
-public class Websocket{
+public class WebSocket {
     private static ArrayList<Thread> threads = new ArrayList<>();
     private static List<Thread> syncList = Collections.synchronizedList(threads);
     private static LinkedBlockingQueue<String> messageQueue = new LinkedBlockingQueue<String>();
@@ -33,7 +33,7 @@ public class Websocket{
     }
 
     public void sendMessage(String message) throws IOException {
-        Encoding enc = new Encoding();
+        DataHandler enc = new DataHandler();
         byte[] byteMsg = message.getBytes(Charset.forName("UTF-8"));
         byte[] framedMsg = enc.generateFrame(byteMsg);
 
@@ -72,14 +72,14 @@ public class Websocket{
         private Socket client;
         private InputStream in;
         private OutputStream out;
-        private Encoding enc;
+        private DataHandler enc;
         private volatile boolean isClosing=false;
         private boolean ping=false;
 
         public ClientConnection(Socket client) throws SocketException {
             this.client = client;
             client.setSoTimeout(5000);
-            this.enc = new Encoding();
+            this.enc = new DataHandler();
         }
         public void setIsClosing(){
             this.isClosing = true;
@@ -97,6 +97,7 @@ public class Websocket{
                     try {
                         byte type = (byte) in.read();
                         int opcode = type & 0x0F;
+                        System.out.println("Opkode: " +Integer.toBinaryString(opcode));
                         switch (opcode){
                             case 0x1: //Text frame
                                 byte[] message = readTextMessage();
@@ -182,7 +183,7 @@ public class Websocket{
 
         private byte[] readControlMessage() throws IOException {
             byte lengthRead = (byte)in.read();
-            if((lengthRead >>> 7) == 0){
+            if(((lengthRead >>> 7) & 0xFF) == 0){
                 throw new IOException("Unmasked message from client");
             }
             int length = (0x000000FF) & lengthRead - 128;
