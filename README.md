@@ -5,7 +5,7 @@ This is a simple WebSocket server Java library, created as a project in the cour
 ## Table of Contents
 * [Team Members](#team-members)
 * [Code Example](#code)
-* [Instalation](#installation)
+* [Installation](#installation)
 * [API Reference](#api)
 * [Credits](#credits)
 <br>
@@ -22,6 +22,9 @@ For code examples, see
 <br>
 
 ## <a name="intallation"></a>Installation
+* Download WebsocketServerLibrary.zip
+* Unzip file and add .jar file to project build path.
+
 <br>
 
 ## <a name="api"></a>API Reference
