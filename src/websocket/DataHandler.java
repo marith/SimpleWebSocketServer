@@ -7,9 +7,15 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
+/*
+ * DataHandler for WebSocket server
+ *
+ * @author Anita Kristine Aune
+ * @author Marit Holm
+ *
+ */
 
 class DataHandler {
-
     /**
      * Takes a Sec-WebSocket-Key as a String and encodes it according to RFC6455 WebSocket protocol.
      * @param   key         Sec-WebSocket-Key recieved from client
