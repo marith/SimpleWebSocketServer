@@ -178,7 +178,7 @@ class DataHandler {
         String newKey = accept.encodeKey(key);
 
         String handshake = "HTTP/1.1 101 Switch Protocols\r\n" +
-                            "Upgrade: java.no.ntnu.websocket\r\n" +
+                            "Upgrade: websocket\r\n" +
                             "Connection: Upgrade\r\n" +
                             "Sec-WebSocket-Accept: " + newKey+"\r\n\r\n";
         return handshake;
