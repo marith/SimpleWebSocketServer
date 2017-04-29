@@ -2,21 +2,37 @@ package websocket;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
 
 class DataHandler {
-    private static String key;
 
-    // Encodes the sec-websocket-key using the GUID-string. Uses SHA-1 and base64 to encode to a new key.
-    protected String encodeKey(String key) throws Exception{
-        MessageDigest md = MessageDigest.getInstance("SHA-1"); // Gets SHA-1 algorithm
+    /**
+     * Takes a Sec-WebSocket-Key as a String and encodes it according to RFC6455 WebSocket protocol.
+     * @param   key         Sec-WebSocket-Key recieved from client
+     * @return              encoded key
+     * @throws  Exception   thrown if unknown algorithm or unsupported encoding
+     */
+    protected String encodeKey(String key) {
+        MessageDigest md = null; // Gets SHA-1 algorithm
+        try {
+            md = MessageDigest.getInstance("SHA-1");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
 
         String guid = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
         key = key.concat(guid);
-        byte[] keyBytes = key.getBytes("UTF-8");
+        byte[] keyBytes = new byte[0];
+        try {
+            keyBytes = key.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
 
         md.update(keyBytes);
         byte[] shaBytes = md.digest();
@@ -26,7 +42,11 @@ class DataHandler {
         return enc;
     }
 
-    // Masks the payload with XOR encryption
+    /**
+     * Unmasks the payload recieved from client. Uses XOR encryption according to RFC6455 WebSocket protocol.
+     * @param input byte array containing masking key and payload
+     * @return      byte array with the unmasked data
+     */
     protected byte[] unmaskData(byte[] input){
         byte[] maskingKey = new byte[4]; // first 4 bytes of input is masking key
 
@@ -44,8 +64,12 @@ class DataHandler {
     }
 
 
-
-    protected byte[] generateFrame(byte[] input){ // Payload from byte array, msg is text
+    /**
+     * Generates frame for sending messages from server to client.
+     * @param input     array containing the message in bytes
+     * @return          byte array with framed message
+     */
+    protected byte[] generateFrame(byte[] input) throws IOException { // Payload from byte array, msg is text
 
         byte opcode = (byte)0b10000001;
         byte[] length = null;
@@ -76,7 +100,7 @@ class DataHandler {
                 }
 
             } else {
-                System.err.print("Do some error handling here");
+                throw new IOException("Message too long");
             }
             output.write(opcode);
             output.write(length);
@@ -90,6 +114,14 @@ class DataHandler {
         return frame;
     }
 
+    /**
+     * Generates a server initiated status frame.
+     * CLOSE: Used to initiate or answer close connection
+     * PING: Check if connection is still alive
+     * PONG: Answer to PING
+     * @param status   status frame choices: "CLOSE", "PING", "PONG"
+     * @return         the specified status frame
+     */
     // Generates a server initiated closing frame
     protected byte[] generateStatusFrame(String status){
         byte opcode = (byte) 0;
@@ -126,8 +158,14 @@ class DataHandler {
         return frame;
     }
 
-    // Generates response handshake from server
-    protected String generateServerResponse(String key) throws Exception{
+    /**
+     * Generates response handshake from server after the client has initiated connection.
+     *
+     * @param key         the Sec-WebSocket-Key from the client.
+     * @return            server handshake response with encoded key
+     * @see               #encodeKey(String key)
+     */
+    protected String generateServerResponse(String key) {
         DataHandler accept = new DataHandler();
         String newKey = accept.encodeKey(key);
 

@@ -1,4 +1,6 @@
-package websocket;
+package websocket.example;
+
+import websocket.WebSocket;
 
 import java.io.IOException;
 
