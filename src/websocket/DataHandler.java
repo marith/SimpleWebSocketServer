@@ -77,8 +77,7 @@ class DataHandler {
      * @param input     array containing the message in bytes
      * @return          byte array with framed message
      */
-    protected byte[] generateFrame(byte[] input) throws IOException { // Payload from byte array, msg is text
-
+    protected byte[] generateFrame(byte[] input) throws IOException {
         byte opcode = (byte)0b10000001;
         byte[] length = null;
         byte[] frame = null;
