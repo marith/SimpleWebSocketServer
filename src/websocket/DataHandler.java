@@ -1,4 +1,4 @@
-package java.no.ntnu.websocket;
+package websocket;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -23,16 +23,16 @@ class DataHandler {
      * @throws  Exception   thrown if unknown algorithm or unsupported encoding
      */
     protected String encodeKey(String key) {
-        MessageDigest md = null; // Gets SHA-1 algorithm
+        MessageDigest md = null;
         try {
-            md = MessageDigest.getInstance("SHA-1");
+            md = MessageDigest.getInstance("SHA-1"); // Gets SHA-1 (Secure Hash Algorithm 1) algorithm
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
 
         String guid = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
-        key = key.concat(guid);
+        key = key.concat(guid); // concatenates the GUID with the key
         byte[] keyBytes = new byte[0];
         try {
             keyBytes = key.getBytes("UTF-8");
@@ -40,10 +40,12 @@ class DataHandler {
             e.printStackTrace();
         }
 
-        md.update(keyBytes);
-        byte[] shaBytes = md.digest();
+        if (md != null) {
+            md.update(keyBytes);
+        }
+        byte[] shaBytes = md.digest(); // bytes goes through SHA-1 algorithm
 
-        String enc = Base64.getEncoder().encodeToString(shaBytes);
+        String enc = Base64.getEncoder().encodeToString(shaBytes); // Encodes to base64
 
         return enc;
     }
@@ -63,7 +65,7 @@ class DataHandler {
         byte[] result = new byte[input.length-4];
 
         for(int i = 0; i < result.length; i++){
-           result[i] = (byte) (input[i+4] ^ maskingKey[i%4]);
+           result[i] = (byte) (input[i+4] ^ maskingKey[i%4]); // The input is XOR-ed with the masking key
         }
 
         return result;
