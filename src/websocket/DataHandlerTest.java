@@ -12,13 +12,13 @@ import static org.junit.Assert.assertNotEquals;
 /**
  * Created by AnitaKristineAune on 28.04.2017.
  */
-public class EncodingTest {
-    private Encoding enc;
+public class DataHandlerTest {
+    private DataHandler enc;
 
 
     @Before
     public void setUp() throws Exception {
-        enc = new Encoding();
+        enc = new DataHandler();
 
     }
 
