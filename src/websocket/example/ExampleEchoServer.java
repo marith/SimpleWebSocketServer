@@ -1,4 +1,6 @@
-package websocket;
+package websocket.example;
+
+import websocket.WebSocket;
 
 import java.io.IOException;
 
@@ -9,7 +11,7 @@ import java.io.IOException;
  * The server will automatically close the connection under given circumstances, see README.md for further details
  */
 
-public class ExampleEchoServer extends WebSocket{
+public class ExampleEchoServer extends WebSocket {
 
     public void echoMessage(int number) throws IOException{
         String message = recieveMessage();
