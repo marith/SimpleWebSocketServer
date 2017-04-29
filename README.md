@@ -12,8 +12,8 @@ This is a simple Websocket server java library, created as a project in the cour
 <br>
 
 ## <a name="team-members"></a>Team Members
-* "Anita Kristine Aune" <anitakra@stud.ntnu.no>
-* "Marit Holm" <marith1@stud.ntnu.no>
+* Anita Kristine Aune <anitakra@stud.ntnu.no>
+* Marit Holm <marith1@stud.ntnu.no>
 <br>
 
 ## <a name="code"></a>Code Example
@@ -31,7 +31,7 @@ This is a simple Websocket server java library, created as a project in the cour
 ## <a name="credits"></a>Credits
 Reference list: 
 * <a href=https://tools.ietf.org/html/rfc6455>IETF - The Websocket Protocol</a>
-* <a href=https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_a_WebSocket_server_in_Java>Mozilla Foundations - Writing a websocket in java </a>
+* <a href=https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers>Mozilla Foundations - Writing websocket servers</a>
 <br>
 
 

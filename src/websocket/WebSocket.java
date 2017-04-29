@@ -3,17 +3,22 @@ package websocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
 import java.nio.charset.Charset;
 import java.util.*;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.util.Scanner;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
+/**
+ * A simple WebSocket server
+ *
+ *
+ * @author Anita Kristine Aune
+ * @author Marit Holm
+ */
 public class WebSocket{
     private static ArrayList<Thread> threads = new ArrayList<>();
     private static List<Thread> syncList = Collections.synchronizedList(threads);
@@ -21,37 +26,66 @@ public class WebSocket{
     private static volatile boolean isRunning = true;
     private static ServerSocket server;
     private static Thread threadHandler;
-
+    private static int pingTimeout;
 
     /**
-     *
-     * @param port - port number where the websocket
-     * @throws IOException
+     * Opens a ServerSocket connection to the specified port
+     * and starts ThreadHandler which accepts new client connections
+     * @param port          the port number
+     * @param pingTimeout   how often the server will ping the client, in milliseconds
+     * @throws IOException  throws exception if ServerSocket is unable to connect
      */
-
-    public void connect(int port) throws IOException {
+    public void connect(int port, int pingTimeout) throws IOException {
         server = new ServerSocket(port);
+        this.pingTimeout = pingTimeout;
         threadHandler = new ThreadHandler();
         threadHandler.start();
     }
 
     /**
-     * @param message
-     * @throws IOException
+     * Opens a ServerSocket connection to the specified port
+     * and starts ThreadHandler which accepts new client connections
+     * @param port          the port number
+     * @param backlog       requested maximum length of the queue of incoming connections.
+     * @param bindAddress   the local InetAddress the server will bind to
+     * @param pingTimeout   how often the server will ping the client, in milliseconds
+     * @throws IOException  throws exception if ServerSocket is unable to connect
      */
-    public void sendMessage(String message) throws IOException {
+    public void connect(int port, int backlog, InetAddress bindAddress, int pingTimeout) throws IOException {
+        server = new ServerSocket(port, backlog, bindAddress);
+        this.pingTimeout = pingTimeout;
+        threadHandler = new ThreadHandler();
+        threadHandler.start();
+    }
+
+
+    /**
+     * Sends a string message to all clients
+     * @param message   String text
+     * @return      false if there are no clients connected
+     *              otherwise true
+     * @throws      IOException if error when writing to client
+     */
+    public boolean sendMessage(String message) throws IOException {
         DataHandler dh = new DataHandler();
         byte[] byteMsg = message.getBytes(Charset.forName("UTF-8"));
         byte[] framedMsg = dh.generateFrame(byteMsg);
 
+        if(syncList.isEmpty()){
+            return false;
+        }
         for (int i = 0; i < syncList.size(); i++) {
             ClientConnection con = (ClientConnection) syncList.get(i);
             con.sendMessage(framedMsg);
         }
+        return true;
     }
 
     /**
-     * @return
+     * Waits for new message in the message queue,
+     * and retrieves it when the message arrives
+     * @return      String message from client
+     *              message is null if waiting is interrupted
      */
     public String recieveMessage(){
         String message = null;
@@ -64,15 +98,20 @@ public class WebSocket{
     }
 
     /**
-     * @throws IOException
+     * Interrupts the threadHandler which tells all the client threads to shut down
+     * and closes the ServerSocket
+     * @throws IOException  if unable to close ServerSocket
      */
     public void close() throws IOException {
-        System.out.println("SERVER IS CLOSING");
         isRunning = false;
         threadHandler.interrupt();
         server.close();
     }
 
+    /**
+     * Removes specified client from client list, when it is shutting down
+     * @param client ClientConnection object that should be removed
+     */
     private void removeClient(ClientConnection client){
         for(int i=0; i<syncList.size();i++){
             if(syncList.get(i).equals(client)){
@@ -81,6 +120,14 @@ public class WebSocket{
         }
     }
 
+    /**
+     * ClientConnection object
+     * extends {@link Thread}
+     *<p>
+     *     a client connection which handles the communication
+     *     from server to client
+     *</p>
+     */
     private class ClientConnection extends Thread {
         private Socket client;
         private InputStream in;
@@ -89,11 +136,23 @@ public class WebSocket{
         private volatile boolean isClosing=false;
         private boolean ping=false;
 
-        private ClientConnection(Socket client) throws SocketException {
+        /**
+         *
+         * @param client        a Socket connection to a client
+         * @param pingTimeout   int milliseconds how often the server should send a
+         *                      ping to client to check if connection is alive
+         * @throws SocketException if unable to set timeout
+         */
+        private ClientConnection(Socket client, int pingTimeout) throws SocketException {
             this.client = client;
-            client.setSoTimeout(5000);
+            client.setSoTimeout(pingTimeout);
             this.dh = new DataHandler();
         }
+
+        /**
+         * Sets boolean isClosing to true to tell the thread that it should shut down
+         * the connection to the client
+         */
         private void setIsClosing(){
             this.isClosing = true;
         }
@@ -106,38 +165,40 @@ public class WebSocket{
                 if (!handshake(in, out)) {
                     throw new IOException("Error connecting to client");
                 }
-                while (!isClosing) {
+                while (!isClosing) {  //keeps running while isClosing is false
                     try {
+                        //reads first byte and gets opcode
                         byte type = (byte) in.read();
                         int opcode = type & 0x0F;
-                        System.out.println("opcode: "+Integer.toBinaryString(opcode));
                         switch (opcode){
-                            case 0x1: //Text frame
+                            case 0x1: //Text frame - adds received message to message queue
                                 byte[] message = readTextMessage();
                                 String messageStr = new String(message, "UTF-8");
                                 messageQueue.add(messageStr);
                                 break;
 
-                            case 0x9: //ping frame
+                            case 0x9: //ping frame - sends a pong frame back
                                 readControlMessage();
                                 sendMessage(dh.generateStatusFrame("PONG"));
                                 break;
-                            case 0xA: //pong frame
+                            case 0xA: //pong frame - when receiveing a pong frame, sets boolean ping to false
                                 readControlMessage();
                                 ping = false;
                                 break;
 
-                            case 0x8: //close frame
+                            case 0x8: //close frame - sets isClosing is true to end thread and removes client from list
                                 readControlMessage();
                                 isClosing = true;
                                 removeClient(this);
                                 break;
 
                             default:
-                                throw new IOException("Unsupported message type.");
+                                throw new IllegalArgumentException("Unsupported message type.");
                         }
 
-                    } //PING IF SOCKET-TIMEOUT
+                    }
+                    //PING if socket-timeout - sends ping frame and sets boolean ping to true
+                    //if ping is already true there was no answer to last ping -> closes connection
                     catch (SocketTimeoutException ste) {
                         if(ping){
                             isClosing=true;
@@ -153,21 +214,29 @@ public class WebSocket{
             catch (IOException e) {
                 e.printStackTrace();
             }
-            finally {
+            finally { //shuts down the connection to the client after sending a "close" frame
                 if(client.isConnected()){
                     try {
-                        System.out.println("Connecting to client closing with closing frame.");
                         byte[] closingframe = dh.generateStatusFrame("CLOSE");
                         sendMessage(closingframe);
+                        out.close();
+                        in.close();
                         client.close();
                     } catch (IOException e) {
-                        System.out.println("Couldn't close!");
                         e.printStackTrace();
                     }
                 }
             }
         }
 
+        /**
+         * Receives the HTTP request from a client and checks the Sec-Websocket-Key
+         * If key is found and is valid, sends a server handshake response back
+         * @param in    InputStream for client
+         * @param out   OutputStream for client
+         * @return      true if handshake was successful
+         *              false if IOException or handshake unsuccessful
+         */
         private boolean handshake(InputStream in, OutputStream out) {
             try {
                 String data = new Scanner(in, "UTF-8").useDelimiter("\\r\\n\\r\\n").next();
@@ -194,10 +263,15 @@ public class WebSocket{
             }
         }
 
+        /**
+         * Reads the control message from second byte to end of message
+         * @return      unmasked byte array with message
+         * @throws IllegalArgumentException     if the client has sent an unmasked message
+         */
         private byte[] readControlMessage() throws IOException {
             byte lengthRead = (byte)in.read();
             if(((lengthRead >>> 7)&0xFF) == 0){
-                throw new IOException("Unmasked message from client");
+                throw new IllegalArgumentException("Unmasked message from client");
             }
             int length = (0x000000FF) & lengthRead - 128;
             byte[] input = new byte[4+length];
@@ -205,6 +279,13 @@ public class WebSocket{
             return dh.unmaskData(input);
         }
 
+
+        /**
+         * Reads the control message from second byte to end of message
+         * supports message length up to 2^16 bytes
+         * @return      byte array with unmasked message
+         * @throws      IllegalArgumentException if message is longer than 2^16 bytes
+         */
         private byte[] readTextMessage() throws IOException {
             int length = (0x000000FF) & in.read() - 128; //if size is <126, this is the length
 
@@ -224,7 +305,7 @@ public class WebSocket{
                             (buffer[4] & 0xFF) << 24 | (buffer[5] & 0xFF) << 16|
                             (buffer[6] & 0xFF) << 8  | (buffer[7] & 0xFF);
                 */
-                throw new IOException("Message too large.");
+                throw new IllegalArgumentException("Message too large.");
             }
 
             byte[] input = new byte[4 + length]; //read mask + length
@@ -233,12 +314,22 @@ public class WebSocket{
             return dh.unmaskData(input);
         }
 
+        /**
+         * Writes an already framed message to client
+         * @param message       byte array with a framed message
+         * @throws IOException  if unable to write message
+         */
         private void sendMessage(byte[] message) throws IOException {
             out.write(message, 0, message.length);
             out.flush();
         }
     }
 
+    /**
+     * The threadhandler which starts and manages the ClientConnection threads
+     * Waits for new connections through the ServerSocket
+     * When interrupted, tells all clients threads to end connection
+     */
     private class ThreadHandler extends Thread {
         public void run(){
             while(isRunning) {
@@ -253,7 +344,7 @@ public class WebSocket{
                 }
                 Thread client = null;
                 try {
-                    client = new ClientConnection(connection);
+                    client = new ClientConnection(connection, pingTimeout);
                 } catch (SocketException e) {
                     e.printStackTrace();
                 }
