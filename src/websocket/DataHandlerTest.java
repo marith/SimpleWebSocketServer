@@ -9,6 +9,10 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
+/*
+ * JUnit tests for DataHandler
+ */
+
 public class DataHandlerTest {
     private DataHandler dh;
 

@@ -5,7 +5,10 @@ import websocket.WebSocket;
 import java.io.IOException;
 
 /* Example: Simple chat server.
-
+ *
+ * @author Anita Kristine Aune
+ * @author Marit Holm
+ *
  * Several clients can be connected.
  * Server disconnects after a total of 5 messages are sent.
  *
@@ -32,7 +35,7 @@ public class ExampleChatServer extends WebSocket {
         ExampleChatServer server = new ExampleChatServer();
 
         try {
-            server.connect(3001);
+            server.connect(3001,5000);
 
             for(int i = 0; i < 5; i++){
                 server.displayChat();

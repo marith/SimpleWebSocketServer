@@ -6,6 +6,9 @@ import java.io.IOException;
 
 /* Example: Simple echo server
  *
+ * @author Anita Kristine Aune
+ * @author Marit Holm
+ *
  * Server echoes the recieved message in uppercase 3 times before disconnecting.
  *
  * The server will automatically close the connection under given circumstances, see README.md for further details
