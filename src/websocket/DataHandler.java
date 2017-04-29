@@ -77,8 +77,7 @@ class DataHandler {
      * @param input     array containing the message in bytes
      * @return          byte array with framed message
      */
-    protected byte[] generateFrame(byte[] input) throws IOException { // Payload from byte array, msg is text
-
+    protected byte[] generateFrame(byte[] input) throws IOException {
         byte opcode = (byte)0b10000001;
         byte[] length = null;
         byte[] frame = null;
@@ -178,7 +177,7 @@ class DataHandler {
         String newKey = accept.encodeKey(key);
 
         String handshake = "HTTP/1.1 101 Switch Protocols\r\n" +
-                            "Upgrade: java.no.ntnu.websocket\r\n" +
+                            "Upgrade: websocket\r\n" +
                             "Connection: Upgrade\r\n" +
                             "Sec-WebSocket-Accept: " + newKey+"\r\n\r\n";
         return handshake;
