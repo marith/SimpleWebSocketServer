@@ -52,13 +52,9 @@
 
                 var context = $("#message").val();
                 var name = $("#namefield").val();
-                var date = new Date();
-                var min = date.getMinutes();
-                var hour = date.getHours();
-                var sec = date.getSeconds();
 
-                //text = "<span>"+ '<b>'+name +"</b>"+ ', '+"<i>"+ hour +':'+ min +':' + sec +' : </i>' + context + "</span><br>";
-                text = context;
+                text = "<span><b>"+name+": </b>"+ context + "</span><br>";
+                //text = context;
                 ws.send(text);
             });
 
