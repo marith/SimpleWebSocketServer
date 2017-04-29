@@ -1,11 +1,10 @@
 # Websocket
-This is a simple Websocket server java library, created as a project in the course Network programming at NTNU, Trondheim. It is based off the Websocket protocol RFC6455. It has support for multiple clients and can send and recieve simple text messages. 
+This is a simple WebSocket server Java library, created as a project in the course Network programming at NTNU, Trondheim. It is based off the WebSocket protocol RFC6455 by IETF. It has support for multiple clients and can send and recieve simple text messages. 
 <br>
 <br>
 ## Table of Contents
 * [Team Members](#team-members)
 * [Code Example](#code)
-* [Motivation](#motivation)
 * [Instalation](#installation)
 * [API Reference](#api)
 * [Credits](#credits)
@@ -17,15 +16,16 @@ This is a simple Websocket server java library, created as a project in the cour
 <br>
 
 ## <a name="code"></a>Code Example
-<br>
-
-## <a name="motivation"></a>Motivation
+For code examples, see
+* <a href="https://github.com/marith/Websocket/tree/master/src/example/ExampleChatServer.java">ExampleChatServer.java</a>
+* <a href="https://github.com/marith/Websocket/tree/master/src/example/ExampleEchoServer.java">ExampleEchoServer.java</a>
 <br>
 
 ## <a name="intallation"></a>Installation
 <br>
 
 ## <a name="api"></a>API Reference
+* <a href=https://marith.github.io/Websocket>Websocket Javadoc</a>
 <br>
 
 ## <a name="credits"></a>Credits
