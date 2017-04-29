@@ -20,10 +20,10 @@ The library is based off the WebSocket protocol RFC6455 by IETF. It has support 
 You can use this library to set up a simple WebSocket server. 
 
 After installing the library and creating a WebSocket object, you can use the following methods: 
-* connect(int port, int timeout) - sets up a server which allows several clients to connect
-* sendMessage(String message) - sends String message to all connected clients
-* recieveMessage() - waits for client to send message, and returns String message
-* close() - disconnects the server and closes all client connections
+* <i>connect(int port, int timeout)</i> - sets up a server which allows several clients to connect
+* <i>sendMessage(String message)</i> - sends String message to all connected clients
+* <i>recieveMessage()</i> - waits for client to send message, and returns String message
+* <i>close()</i> - disconnects the server and closes all client connections
 
 For code examples you can visit the src/examples folder, or go directly:
 * Chat server example:  <a href="https://github.com/marith/Websocket/tree/master/src/example/ExampleChatServer.java">ExampleChatServer.java</a>
