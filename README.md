@@ -29,6 +29,8 @@ For code examples you can visit the src/examples folder, or go directly:
 * Chat server example:  <a href="https://github.com/marith/Websocket/tree/master/src/example/ExampleChatServer.java">ExampleChatServer.java</a>
 * Echo server example:  <a href="https://github.com/marith/Websocket/tree/master/src/example/ExampleEchoServer.java">ExampleEchoServer.java</a>
 
+If you wish to test the examples, you can run the index.html file located in web folder.
+
 <br>
 
 ## <a name="intallation"></a>Installation
