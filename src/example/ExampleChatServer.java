@@ -1,6 +1,6 @@
-package example;
+package java.no.ntnu.websocket.example;
 
-import websocket.WebSocket;
+import java.no.ntnu.websocket.*;
 
 import java.io.IOException;
 

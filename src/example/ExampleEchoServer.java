@@ -1,6 +1,6 @@
-package example;
+package java.no.ntnu.websocket.example;
 
-import websocket.WebSocket;
+import java.no.ntnu.websocket.WebSocket;
 
 import java.io.IOException;
 
@@ -9,19 +9,19 @@ import java.io.IOException;
  * @author Anita Kristine Aune
  * @author Marit Holm
  *
- * Server echoes the recieved message in uppercase 3 times before disconnecting.
+ * Server echoes the recieved message in uppercase.
  *
  * The server will automatically close the connection under given circumstances, see README.md for further details
  */
 
 public class ExampleEchoServer extends WebSocket {
 
-    public void echoMessage(int number) throws IOException{
-        String message = recieveMessage();
-        sendMessage("You said: " + message);
-        message.toUpperCase();
-        for(int i = 0; i < number; i++) {
-            sendMessage("Echo:" +message);
+    public void echoMessage() throws IOException{
+        while(true) {
+            String message = recieveMessage();
+            sendMessage("You said: " + message);
+            message = message.toUpperCase();
+            sendMessage("Echo: " +message);
         }
     }
 
@@ -29,9 +29,6 @@ public class ExampleEchoServer extends WebSocket {
         ExampleEchoServer server = new ExampleEchoServer();
         server.connect(3001,5000);
 
-        server.echoMessage(3);
-
-        server.sendMessage("Server disconnected.");
-        server.close();
+        server.echoMessage();
     }
 }
