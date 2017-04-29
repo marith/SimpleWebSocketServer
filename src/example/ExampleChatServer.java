@@ -1,4 +1,4 @@
-package websocket.example;
+package example;
 
 import websocket.WebSocket;
 
