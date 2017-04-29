@@ -1,11 +1,12 @@
 # Simple WebSocket server library
-This is a simple WebSocket server Java library, created as a project in the course Network programming (TDAT2004) at NTNU, Trondheim. 
+This is a simple WebSocket server Java library, created as a project in the course TDAT2004 Data Communications and Network Programming at NTNU in Trondheim. 
 The library is based off the WebSocket protocol RFC6455 by IETF. It has support for multiple clients via multithreading, and can send and recieve text messages up to 65 000 bytes.
 <br>
 <br>
 ## Table of Contents
 * [Team Members](#team-members)
-* [Usage](#code)
+* [Usage](#usage)
+* [Code examples](#code)
 * [Installation](#installation)
 * [API Reference](#api)
 * [Credits](#credits)
@@ -16,15 +17,17 @@ The library is based off the WebSocket protocol RFC6455 by IETF. It has support 
 * Marit Holm - <marith1@stud.ntnu.no>
 <br>
 
-## <a name="code"></a>Usage
+## <a name="usage"></a>Usage
 You can use this library to set up a simple WebSocket server. 
 
 After installing the library and creating a WebSocket object, you can use the following methods: 
-* <i>connect(int port, int timeout)</i> - sets up a server which allows several clients to connect. Timeout (ms) is ping frequency.
+* <i>connect(int port, int timeout)</i> - sets up a server which allows several clients to connect. Timeout is ping frequency in milliseconds.
 * <i>sendMessage(String message)</i> - sends String message to all connected clients
 * <i>recieveMessage()</i> - waits for client to send message, and returns String message
 * <i>close()</i> - disconnects the server and closes all client connections
+<br>
 
+## <a name="code"></a>Code examples
 For code examples you can visit the src/examples folder, or go directly:
 * Chat server example:  <a href="https://github.com/marith/Websocket/tree/master/src/example/ExampleChatServer.java">ExampleChatServer.java</a>
 * Echo server example:  <a href="https://github.com/marith/Websocket/tree/master/src/example/ExampleEchoServer.java">ExampleEchoServer.java</a>
