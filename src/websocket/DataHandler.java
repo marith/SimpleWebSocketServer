@@ -182,4 +182,8 @@ class DataHandler {
                             "Sec-WebSocket-Accept: " + newKey+"\r\n\r\n";
         return handshake;
     }
+
+    protected String badRequestResponse(){
+        return "HTTP/1.1 400 Bad Request\r\n\r\nnot websocket protocol";
+    }
 }
