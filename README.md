@@ -9,6 +9,7 @@ The library is based off the WebSocket protocol RFC6455 by IETF. It has support 
 * [Code examples](#code)
 * [Installation](#installation)
 * [API Reference](#api)
+* [WebSocket Protocol Implementations](#protocol)
 * [Credits](#credits)
 <br>
 
@@ -47,6 +48,11 @@ If you wish to test the examples, you can run the index.html file located in web
 For Javadoc documentation of the project, visit
 * <a href=https://marith.github.io/Websocket>Websocket Javadoc</a>
 <br>
+
+## <a name="protocol"></a>WebSocket Protocol Implementations
+The server supports Opening Handshake, and shuts down the connection if the handshake is unsuccessful.
+
+
 
 ## <a name="credits"></a>Credits
 Reference list: 
