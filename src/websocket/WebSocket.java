@@ -163,6 +163,7 @@ public class WebSocket{
                 in = client.getInputStream();
                 out = client.getOutputStream();
                 if (!handshake(in, out)) {
+
                     throw new IOException("Error connecting to client");
                 }
                 while (!isClosing) {  //keeps running while isClosing is false
@@ -240,12 +241,39 @@ public class WebSocket{
         private boolean handshake(InputStream in, OutputStream out) {
             try {
                 String data = new Scanner(in, "UTF-8").useDelimiter("\\r\\n\\r\\n").next();
-                String searchFor = "Sec-WebSocket-Key: ";
-                Pattern word = Pattern.compile(searchFor);
-                Matcher match = word.matcher(data);
+
+                //Checks if the request is a valid websockt
+                String get = "GET";
+                String httpVersion = "HTTP/1.1";
+                String upgrade = "Upgrade: websocket";
+                String connection = "Connection: Upgrade";
+
+                Pattern getPat = Pattern.compile(get);
+                Pattern httpVersionPat = Pattern.compile(httpVersion);
+                Pattern upgradePat = Pattern.compile(upgrade);
+                Pattern connectionPat = Pattern.compile(connection);
+
+                Matcher getMatch = getPat.matcher(data);
+                Matcher httpVersionMatch = httpVersionPat.matcher(data);
+                Matcher upgradeMatch = upgradePat.matcher(data);
+                Matcher connectionMatch = connectionPat.matcher(data);
+
+                if(!getMatch.find() || !httpVersionMatch.find() || !upgradeMatch.find() || !connectionMatch.find()){
+                    String response = dh.badRequestResponse();
+                    byte[] responseByte = response.getBytes();
+                    out.write(responseByte);
+                    return false;
+                }
+
+                String keyName = "Sec-WebSocket-Key: ";
+                Pattern keyPat = Pattern.compile(keyName);
+                Matcher match = keyPat.matcher(data);
                 boolean isMatch = match.find();
 
                 if (!isMatch) {
+                    String response = dh.badRequestResponse();
+                    byte[] responseByte = response.getBytes();
+                    out.write(responseByte);
                     return false;
                 }
                 String key = data.substring(match.end(), match.end() + 24);
