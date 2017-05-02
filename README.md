@@ -56,12 +56,11 @@ It also has support for sending and recieving ping and pong frames, which is use
 The library also supports multiple clients via multithreading. 
 
 The WebSocket connection automatically closes if the opening handshake is unsuccessful.
-It also closes the connection under the given conditions:
+It also closes the connection under given circumstances. In any of these cases, the server sends a closing frame in return, and closes the connection:
   - If the client is inresponsive (no pong is recieved)
   - Unsupported data (opcode) is recieved
   - Closing frame is recieved
-  In any of these, the server sends a closing frame in return, and closes the connection. 
-
+ 
 <br>
 
 
