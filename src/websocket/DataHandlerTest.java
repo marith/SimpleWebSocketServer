@@ -145,12 +145,12 @@ public class DataHandlerTest {
     @Test
     public void testGenerateServerResponse() throws Exception {
         String validHandshake = "HTTP/1.1 101 Switch Protocols\r\n" +
-                "Upgrade: java.no.ntnu.websocket\r\n" +
+                "Upgrade: websocket\r\n" +
                 "Connection: Upgrade\r\n" +
                 "Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n\r\n";
 
         String invalidHandshake = "HTTP/1.1 101 Switch Protocols\r\n" +
-                "Upgrade: java.no.ntnu.websocket\r\n" +
+                "Upgrade: websocket\r\n" +
                 "Connection: Upgrade\r\n" +
                 "Sec-WebSocket-Accept: w5pfFvEi2y6Q2kGGbBhtRbJLxOo=\r\n\r\n";
 
