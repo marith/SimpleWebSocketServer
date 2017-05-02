@@ -24,7 +24,7 @@ You can use this library to set up a simple WebSocket server.
 After installing the library and creating a WebSocket object, you can use the following methods: 
 * `connect(int port, int timeout)` - sets up a server which allows several clients to connect. Timeout is ping frequency in milliseconds.
 * `sendMessage(String message)` - sends String message to all connected clients
-* `recieveMessage()` - waits for client to send message, and returns String message
+* `recieveMessage()` - waits for client to send message, and returns the message to the server
 * `close()` - disconnects the server and closes all client connections
 <br>
 
