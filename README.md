@@ -22,14 +22,14 @@ The library is based off the WebSocket protocol RFC6455 by IETF. It has support 
 You can use this library to set up a simple WebSocket server. 
 
 After installing the library and creating a WebSocket object, you can use the following methods: 
-* <i>connect(int port, int timeout)</i> - sets up a server which allows several clients to connect. Timeout is ping frequency in milliseconds.
-* <i>sendMessage(String message)</i> - sends String message to all connected clients
-* <i>recieveMessage()</i> - waits for client to send message, and returns String message
-* <i>close()</i> - disconnects the server and closes all client connections
+* `connect(int port, int timeout)` - sets up a server which allows several clients to connect. Timeout is ping frequency in milliseconds.
+* `sendMessage(String message)` - sends String message to all connected clients
+* `recieveMessage()` - waits for client to send message, and returns String message
+* `close()` - disconnects the server and closes all client connections
 <br>
 
 ## <a name="code"></a>Code examples
-For code examples you can visit the src/examples folder, or go directly:
+For code examples you can visit `src/examples`, or go directly:
 * Chat server example:  <a href="https://github.com/marith/Websocket/tree/master/src/example/ExampleChatServer.java">ExampleChatServer.java</a>
 * Echo server example:  <a href="https://github.com/marith/Websocket/tree/master/src/example/ExampleEchoServer.java">ExampleEchoServer.java</a>
 
@@ -39,8 +39,8 @@ If you wish to test the examples, you can run the index.html file located in web
 <br>
 
 ## <a name="intallation"></a>Installation
-* Download WebsocketServerLibrary.zip
-* Unzip file and add .jar file to your project's build path.
+* Download `WebsocketServerLibrary.zip`
+* Unzip file and add `Websocket.jar` to your project's build path.
 
 <br>
 
