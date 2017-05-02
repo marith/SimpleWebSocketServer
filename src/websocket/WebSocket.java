@@ -296,15 +296,16 @@ public class WebSocket{
                 length = (buffer[0] & 0xFF) << 8 | (buffer[1] & 0xFF);
 
             } else if (length == 127) { //if "length" is 127: read next 8 bytes for real length
-                //NOT IMPLEMENTED
-                /*
+                /* NOT YET IMPLEMENTED. Would need to implement better handling for large byte arrays in order to work.
+
                 byte[] buffer = new byte[8];
-                in.read(buffer, 2, 8);
-                long lengthLong =    (buffer[0] & 0xFF) << 56 | (buffer[1] & 0xFF) << 48|
-                            (buffer[2] & 0xFF) << 40 | (buffer[3] & 0xFF) << 32|
-                            (buffer[4] & 0xFF) << 24 | (buffer[5] & 0xFF) << 16|
-                            (buffer[6] & 0xFF) << 8  | (buffer[7] & 0xFF);
+                in.read(buffer);
+                long lengthLong =   (buffer[0] & 0xFF) << 56 | (buffer[1] & 0xFF) << 48|
+                                    (buffer[2] & 0xFF) << 40 | (buffer[3] & 0xFF) << 32|
+                                    (buffer[4] & 0xFF) << 24 | (buffer[5] & 0xFF) << 16|
+                                    (buffer[6] & 0xFF) << 8  | (buffer[7] & 0xFF);
                 */
+
                 throw new IllegalArgumentException("Message too large.");
             }
 
