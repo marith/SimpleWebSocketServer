@@ -46,7 +46,7 @@ If you wish to test the examples, you can run the index.html file located in web
 
 ## <a name="api"></a>API Reference
 For Javadoc documentation of the project, visit
-* <a href=https://marith.github.io/Websocket>Websocket Javadoc</a>
+* <a href=https://marith.github.io/SimpleWebSocketServer>WebSocket server Javadoc</a>
 <br>
 
 ## <a name="protocol"></a>WebSocket Protocol Implementations
